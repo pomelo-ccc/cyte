@@ -54,7 +54,7 @@ Future<String> askClaudeHaiku(
   final host = location == null ? null : RemoteLocation.hostOf(location);
   final providers = ModelProviders.current;
   var custom = providers.resolve(model);
-  if (custom == null && !providers.antigravityOffered) {
+  if (custom == null && !providers.codebuddyOffered) {
     custom = providers.resolve(providers.firstModel);
     if (custom == null) {
       throw const ClaudeHaikuException(ClaudeCore.noModel);
@@ -158,7 +158,7 @@ UsageCall? claudeHaikuCall(
     at: at.subtract(duration),
     duration: duration,
     status: result['is_error'] == true ? 500 : 200,
-    provider: 'antigravity-cli',
+    provider: 'codebuddy-cli',
     protocol: 'anthropic',
     model: model
         .replaceFirst(RegExp(r'\[[^\]]*\]$'), '')

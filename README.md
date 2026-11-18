@@ -1,39 +1,43 @@
-# Ayte
+# Cyte
 
-[中文说明](README_CN.md) · [Latest Release](https://github.com/pomelo-ccc/ayte/releases/latest)
+[中文说明](README_CN.md) · [Latest Release](https://github.com/pomelo-ccc/cyte/releases/latest)
 
-**Ayte** is a native desktop workbench and IDE for **Google Antigravity (`agy`)**, built with Flutter and native macOS/Windows/Linux integrations.
+**Cyte** is a native desktop workbench and IDE for **Tencent CodeBuddy (`codebuddy` / `cbc`)**, built with Flutter and native macOS/Windows/Linux integrations.
 
 ## Download & Install
 
-Grab the prebuilt installer for your platform from [GitHub Releases](https://github.com/pomelo-ccc/ayte/releases/latest) (current version `v2.0.2`):
+Grab the prebuilt installer for your platform from [GitHub Releases](https://github.com/pomelo-ccc/cyte/releases/latest) (current version `v2.0.2`):
 
 | Platform | Architecture | Direct Download |
 | --- | --- | --- |
-| **macOS** | Apple Silicon (M1 / M2 / M3 / M4) | [Ayte-2.0.2-arm64.dmg](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-arm64.dmg) |
-| **macOS** | Intel (x86_64) | [Ayte-2.0.2-x64.dmg](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-x64.dmg) |
-| **Windows** | x64 (Windows 10 / 11) | [Ayte-2.0.2-setup.exe](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-setup.exe) |
-| **Windows** | ARM64 | [Ayte-2.0.2-setup-arm64.exe](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-setup-arm64.exe) |
-| **Linux** | x64 (Ubuntu / Debian `.deb`) | [Ayte-2.0.2-linux-amd64.deb](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-linux-amd64.deb) · [.tar.gz](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-linux-amd64.tar.gz) |
-| **Linux** | ARM64 (Ubuntu / Debian `.deb`) | [Ayte-2.0.2-linux-arm64.deb](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-linux-arm64.deb) · [.tar.gz](https://github.com/pomelo-ccc/ayte/releases/download/v2.0.2/Ayte-2.0.2-linux-arm64.tar.gz) |
+| **macOS** | Apple Silicon (M1 / M2 / M3 / M4) | [Cyte-2.0.2-arm64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-arm64.dmg) |
+| **macOS** | Intel (x86_64) | [Cyte-2.0.2-x64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-x64.dmg) |
+| **Windows** | x64 (Windows 10 / 11) | [Cyte-2.0.2-setup.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-setup.exe) |
+| **Windows** | ARM64 | [Cyte-2.0.2-setup-arm64.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-setup-arm64.exe) |
+| **Linux** | x64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.2-linux-amd64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-linux-amd64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-linux-amd64.tar.gz) |
+| **Linux** | ARM64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.2-linux-arm64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-linux-arm64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.2/Cyte-2.0.2-linux-arm64.tar.gz) |
 
-> **macOS First Launch Note**: After dragging `Ayte` into `Applications`, if Gatekeeper blocks opening an ad-hoc signed build, run this once in Terminal:
+> **macOS First Launch Note**: After dragging `Cyte` into `Applications`, if Gatekeeper blocks opening an ad-hoc signed build, run this once in Terminal:
 > ```bash
-> xattr -cr /Applications/Ayte.app
+> xattr -cr /Applications/Cyte.app
 > ```
-> Make sure **Antigravity CLI (`agy`)** is installed and signed in on your machine (`agy --version`).
+> Make sure **CodeBuddy CLI (`codebuddy` / `cbc`)** is installed (`npm install -g @tencent-ai/codebuddy-code`).
 
 ## Highlights
 
-- **First-Class Antigravity CLI (`agy`) Engine**: Persistent multi-turn `stream-json` sessions over your local `agy` installation (`~/.gemini/bin/agy` or `~/.local/bin/agy`), preserving subagents, background daemons, and avoiding cold-start auth latency.
-- **Custom API Upstreams (Built-in Core)**: Optional built-in agent core supporting custom Anthropic / OpenAI-compatible API providers alongside `agy`.
-- **Isolated Storage (`~/.ayte`)**: Completely independent bundle ID (`dev.ayte.desktop`), settings (`~/Library/Application Support/ayte`), and session transcripts (`~/.ayte/projects/`), coexisting cleanly alongside other tools.
-- **Native Antigravity Customizations**: Inspect and edit global (`~/.gemini/config/`) and workspace (`.agents/`, `GEMINI.md`, `AGENTS.md`) Skills, Plugins, Rules, MCP Servers, and Hooks directly inside Settings → Customize.
+- **First-Class CodeBuddy CLI (`codebuddy` / `cbc`) Engine**: Persistent multi-turn `stream-json` sessions supporting CN (`copilot.tencent.com`), Global (`www.codebuddy.ai`), iOA, Enterprise, and custom `~/.codebuddy/models.json` models with `--effort` and `--autocompact`.
+- **Multi-Account OAuth & Credit Center**: Browser OAuth login for both CN & Global regions, API Key accounts (`CODEBUDDY_API_KEY`), Token/JSON import & export, live edition/billing checks, per-turn credit tracking, and automatic failover when credits run out.
+- **Custom API Upstreams (Built-in Core)**: Optional built-in agent core supporting custom Anthropic / OpenAI-compatible API providers alongside CodeBuddy CLI.
+- **Isolated Storage (`~/.cyte` & `~/.codebuddy`)**: Completely independent bundle ID (`dev.cyte.desktop`), settings (`~/Library/Application Support/cyte`), and native CodeBuddy session transcripts (`~/.codebuddy/projects/`), coexisting cleanly alongside `Byte` and `Ayte`.
+- **Native `.codebuddy` Customizations**: Inspect and edit global (`~/.codebuddy/`) and workspace (`.codebuddy/`, `CODEBUDDY.md`, `.mcp.json`) Skills, Subagents, Commands, Rules, MCP Servers, Hooks, and Plugins directly inside Settings → Customize.
 - **Rich Workbench UX**: Built-in code editor & diff viewer, terminal deck, Session Replay waterfall timeline, live turn chronograph, Stash, Notch Dynamic Island & PiP watcher on macOS, and end-to-end encrypted mobile pairing.
 
 ## Building from Source
 
-1. Make sure **Antigravity CLI (`agy`)** is installed and signed in on your machine (`agy --version`).
+1. Install **CodeBuddy CLI**:
+   ```bash
+   npm install -g @tencent-ai/codebuddy-code
+   ```
 2. Run locally with Flutter:
    ```bash
    flutter pub get
@@ -48,4 +52,4 @@ Grab the prebuilt installer for your platform from [GitHub Releases](https://git
 
 ## Credits & License
 
-Ayte is derived from the open-source [BaoCode](https://github.com/baocode-dev/baocode) project and distributed under the same open-source license — see [LICENSE](LICENSE) for full terms.
+Cyte is derived from the open-source [BaoCode](https://github.com/baocode-dev/baocode) project and distributed under the same open-source license — see [LICENSE](LICENSE) for full terms.

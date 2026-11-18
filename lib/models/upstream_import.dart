@@ -25,7 +25,7 @@ class UpstreamImport {
   static UpstreamImport? parse(String link) {
     final uri = Uri.tryParse(link.trim());
     if (uri == null ||
-        !uri.isScheme(scheme) ||
+        (!uri.isScheme(scheme) && !uri.isScheme('cyte')) ||
         uri.host != 'provider' ||
         uri.path != '/import') {
       return null;

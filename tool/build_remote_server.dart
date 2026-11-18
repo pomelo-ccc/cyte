@@ -54,7 +54,7 @@ const _platforms = [
 ];
 
 /// Where the gzipped builds are downloaded from: `<base>/v<marketing>/<file>`.
-const _downloadsBase = 'https://github.com/pomelo-ccc/ayte/releases/download';
+const _downloadsBase = 'https://github.com/pomelo-ccc/cyte/releases/download';
 
 Future<void> main(List<String> arguments) async {
   final root = File.fromUri(Platform.script).parent.parent.absolute;

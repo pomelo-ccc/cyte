@@ -9,7 +9,7 @@ import '../../ide/explorer_excludes.dart';
 import '../../ide/ide_button.dart';
 import '../../ide/ide_menu.dart';
 import '../../ide/ide_notifications.dart' show IdeSeverity;
-import '../../kernel/antigravity/antigravity_cli.dart';
+import '../../kernel/codebuddy/codebuddy_cli.dart';
 import '../../kernel/claude_code/claude_core_setting.dart';
 import '../../kernel/claude_code/claude_path_setting.dart';
 import '../../kernel/commit_attribution.dart';
@@ -74,7 +74,7 @@ class GeneralSettingsPage extends StatelessWidget {
   static String attributionName(BuildContext context, CommitAttribution value) {
     final l10n = context.l10n;
     return switch (value) {
-      CommitAttribution.baocode => 'Ayte',
+      CommitAttribution.baocode => 'Cyte',
       CommitAttribution.agent => l10n.generalSettingsAttributionAgent,
       CommitAttribution.none => l10n.generalSettingsAttributionNone,
     };
@@ -516,7 +516,7 @@ class GeneralSettingsPage extends StatelessWidget {
                       label: isZh ? '加载线条跳动规律' : 'Loading Bar Rhythm',
                       description: isZh
                           ? '对话内思考加载与左侧会话列表运行状态的 4 柱线条跳动规律'
-                          : 'Rhythm pattern of the 4-bar Ayte loading indicator in chat and sidebar',
+                          : 'Rhythm pattern of the 4-bar Cyte loading indicator in chat and sidebar',
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -559,7 +559,7 @@ class GeneralSettingsPage extends StatelessWidget {
             ),
             if (claudeStatus case final claudeStatus? when !kIsWeb)
               SettingsGroup(
-                title: 'Antigravity CLI',
+                title: 'CodeBuddy CLI',
                 children: [
                   SettingsCard(
                     children: [
@@ -569,19 +569,19 @@ class GeneralSettingsPage extends StatelessWidget {
                         label: l10n.generalSettingsClaudeCore,
                         description: l10n.generalSettingsClaudeCoreDescription,
                         values: {
-                          ClaudeCore.antigravity.name: 'Antigravity CLI',
+                          ClaudeCore.codebuddy.name: 'CodeBuddy CLI',
                           ClaudeCore.builtin.name:
                               l10n.generalSettingsClaudeCoreBuiltin,
                         },
                         fallback: ClaudeCore.fallback.name,
                       ),
-                      _AntigravityPathSetting(
-                        path: AntigravityPathSetting.parse(
-                          settings?[AntigravityPathSetting.settingKey],
+                      _CodeBuddyPathSetting(
+                        path: CodeBuddyPathSetting.parse(
+                          settings?[CodeBuddyPathSetting.settingKey],
                         ),
                         status: claudeStatus,
                         onChanged: (path) => _write(
-                          AntigravityPathSetting.settingKey,
+                          CodeBuddyPathSetting.settingKey,
                           path.isEmpty ? null : path,
                         ),
                       ),
@@ -817,7 +817,7 @@ class _ContextMenuSettingState extends State<_ContextMenuSetting> {
                 ? () => unawaited(
                     _run(
                       () => ContextMenu.install((
-                        agent: l10n.contextMenuOpenWith('Ayte'),
+                        agent: l10n.contextMenuOpenWith('Cyte'),
                         ide: l10n.contextMenuOpenWith('Fast Ide'),
                       )),
                     ),
@@ -843,9 +843,9 @@ class _ContextMenuSettingState extends State<_ContextMenuSetting> {
   }
 }
 
-/// The Antigravity CLI (`agy`) executable path setting and status display.
-class _AntigravityPathSetting extends StatefulWidget {
-  const _AntigravityPathSetting({
+/// The CodeBuddy CLI (`codebuddy` / `cbc`) executable path setting and status display.
+class _CodeBuddyPathSetting extends StatefulWidget {
+  const _CodeBuddyPathSetting({
     required this.path,
     required this.status,
     required this.onChanged,
@@ -856,15 +856,15 @@ class _AntigravityPathSetting extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  State<_AntigravityPathSetting> createState() =>
-      _AntigravityPathSettingState();
+  State<_CodeBuddyPathSetting> createState() =>
+      _CodeBuddyPathSettingState();
 }
 
-class _AntigravityPathSettingState extends State<_AntigravityPathSetting> {
+class _CodeBuddyPathSettingState extends State<_CodeBuddyPathSetting> {
   late Future<LocalClaudeStatus?> _status = widget.status();
 
   @override
-  void didUpdateWidget(_AntigravityPathSetting old) {
+  void didUpdateWidget(_CodeBuddyPathSetting old) {
     super.didUpdateWidget(old);
     if (old.path != widget.path) _status = widget.status();
   }
@@ -873,8 +873,8 @@ class _AntigravityPathSettingState extends State<_AntigravityPathSetting> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return SettingsRow(
-      label: 'Antigravity CLI ${l10n.claudePathSetting}',
-      description: 'Antigravity CLI (agy) 可执行文件路径（留空则自动查找）',
+      label: 'CodeBuddy CLI ${l10n.claudePathSetting}',
+      description: 'CodeBuddy CLI (codebuddy / cbc) 可执行文件路径（留空则自动查找）',
       below: [
         FutureBuilder(
           future: _status,
@@ -893,7 +893,7 @@ class _AntigravityPathSettingState extends State<_AntigravityPathSetting> {
                 false,
               ),
               LocalClaudeMissing() => (
-                '未找到 Antigravity CLI (agy)',
+                '未找到 CodeBuddy CLI (npm i -g @tencent-ai/codebuddy-code)',
                 false,
               ),
               LocalClaudeFailed(:final message) => (message, true),
@@ -913,8 +913,8 @@ class _AntigravityPathSettingState extends State<_AntigravityPathSetting> {
       ],
       trailing: SettingsTextField(
         value: widget.path ?? '',
-        hint: '~/.gemini/bin/agy',
-        semanticLabel: 'Antigravity CLI ${l10n.claudePathSetting}',
+        hint: '~/.local/bin/codebuddy',
+        semanticLabel: 'CodeBuddy CLI ${l10n.claudePathSetting}',
         width: 260,
         onSubmitted: widget.onChanged,
       ),

@@ -163,7 +163,7 @@ static OSStatus KestrelHotKeyHandler(EventHandlerCallRef nextHandler,
 
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
   self.highlight = YES;
-  gLabelField.stringValue = @"✨ 松开鼠标，立即投喂给 Ayte";
+  gLabelField.stringValue = @"✨ 松开鼠标，立即投喂给 Cyte";
   [self setNeedsDisplay:YES];
   return NSDragOperationCopy;
 }
@@ -515,7 +515,7 @@ static void KestrelSetupPipPanel(void) {
   KestrelPipCardView *card = [[KestrelPipCardView alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
 
   gPipTitleField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 82, 168, 18)];
-  gPipTitleField.stringValue = @"🦅 Ayte 盯盘小窗";
+  gPipTitleField.stringValue = @"🦅 Cyte 盯盘小窗";
   gPipTitleField.editable = NO;
   gPipTitleField.selectable = NO;
   gPipTitleField.bezeled = NO;
@@ -573,27 +573,27 @@ void KestrelNotchInit(const char *inboxPathCString) {
   NSString *path = [NSString stringWithUTF8String:inboxPathCString];
   dispatch_async(dispatch_get_main_queue(), ^{
     gInboxPath = [path copy];
-    gStatusPath = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"kestrel_live_status.json"] copy];
+    gStatusPath = [[NSTemporaryDirectory() stringByAppendingPathComponent:@"cyte_live_status.json"] copy];
     if (gNotchPanel != nil) return;
 
-    // Ensure macOS menu bar & window titles say "Ayte"
+    // Ensure macOS menu bar & window titles say "Cyte"
     NSMenu *mainMenu = [NSApp mainMenu];
     if (mainMenu && mainMenu.numberOfItems > 0) {
       NSMenuItem *appItem = [mainMenu itemAtIndex:0];
-      appItem.title = @"Ayte";
+      appItem.title = @"Cyte";
       NSMenu *appSubmenu = appItem.submenu;
       if (appSubmenu) {
-        appSubmenu.title = @"Ayte";
+        appSubmenu.title = @"Cyte";
         for (NSMenuItem *sub in appSubmenu.itemArray) {
           if ([sub.title containsString:@"Kestrel"]) {
-            sub.title = [sub.title stringByReplacingOccurrencesOfString:@"Kestrel" withString:@"Ayte"];
+            sub.title = [sub.title stringByReplacingOccurrencesOfString:@"Kestrel" withString:@"Cyte"];
           }
         }
       }
     }
     for (NSWindow *win in [NSApp windows]) {
       if ([win.title isEqualToString:@"Kestrel"]) {
-        win.title = @"Ayte";
+        win.title = @"Cyte";
       }
     }
 
@@ -714,6 +714,6 @@ void KestrelNotchInit(const char *inboxPathCString) {
 
 __attribute__((visibility("default")))
 void KestrelNotchInitDefault(void) {
-  NSString *inbox = [NSTemporaryDirectory() stringByAppendingPathComponent:@"ayte_notch_inbox.jsonl"];
+  NSString *inbox = [NSTemporaryDirectory() stringByAppendingPathComponent:@"cyte_notch_inbox.jsonl"];
   KestrelNotchInit([inbox UTF8String]);
 }

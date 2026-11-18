@@ -19,8 +19,10 @@ class _LocalDisk implements CustomizationDisk {
 
   @override
   Future<String> configDir() async {
+    final override = Platform.environment['CODEBUDDY_CONFIG_DIR']?.trim();
+    if (override != null && override.isNotEmpty) return override;
     final home = homeDirectory;
-    return home == null || home.isEmpty ? '' : p.join(home, '.gemini', 'config');
+    return home == null || home.isEmpty ? '' : p.join(home, '.codebuddy');
   }
 
   @override

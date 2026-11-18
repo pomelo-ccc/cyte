@@ -77,7 +77,7 @@ class ManualUpdateRequired implements Exception {
   const ManualUpdateRequired(this.reason);
 
   static final downloadPage = Uri.parse(
-    'https://github.com/pomelo-ccc/ayte/releases/latest',
+    'https://github.com/pomelo-ccc/cyte/releases/latest',
   );
 
   final String reason;

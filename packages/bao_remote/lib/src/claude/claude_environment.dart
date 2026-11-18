@@ -15,28 +15,32 @@ import '../platform/app_paths.dart';
 /// environment stands in when that fails, and is all there is on Windows,
 /// whose window already carries the user's environment.
 abstract final class ClaudeEnvironment {
-  /// Names the directory Ayte keeps its session state in (`projects`,
-  /// `file-history`, …), e.g. a build's own; `~/.ayte` when unset.
-  static const dataPathVariable = 'AYTE_SESSION_DATA_PATH';
+  /// Names the directory CodeBuddy / Cyte keeps its session state in
+  /// (`projects`, `file-history`, …); `~/.codebuddy` when unset.
+  static const dataPathVariable = 'CODEBUDDY_CONFIG_DIR';
 
   /// Keeps agent runs to essential traffic.
   static const essentialTrafficVariable =
-      'AYTE_DISABLE_NONESSENTIAL_TRAFFIC';
+      'CYTE_DISABLE_NONESSENTIAL_TRAFFIC';
 
   static Future<Map<String, String>>? _environment;
 
   /// The login shell's environment over the app's own.
   static Future<Map<String, String>> of() => _environment ??= _login();
 
-  /// Where Ayte keeps its session state: [dataPathVariable], else
-  /// `<home>/.ayte`.
+  /// Where CodeBuddy keeps its session state: [dataPathVariable], else
+  /// `<home>/.codebuddy`.
   static Future<String> configDir() async {
     final environment = await of();
     if (environment[dataPathVariable] case final dir? when dir.isNotEmpty) {
       return dir;
     }
+    if (environment['CYTE_SESSION_DATA_PATH'] case final dir?
+        when dir.isNotEmpty) {
+      return dir;
+    }
     final home = AppPaths.home(environment);
-    return home.isEmpty ? '' : p.join(home, '.ayte');
+    return home.isEmpty ? '' : p.join(home, '.codebuddy');
   }
 
   /// The state directory for child runs, from [environment].

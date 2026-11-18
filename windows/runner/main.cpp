@@ -30,7 +30,7 @@ constexpr unsigned int kMinClientHeight = 540;
 // runs: a second one started (the `code` command, Explorer's Open with)
 // finds it taken, and hands its paths to the first (see OpenRequests).
 // Local\ is the user's session, so another user's copy is another's.
-constexpr wchar_t kSingleInstanceMutex[] = L"Local\\Ayte.SingleInstance";
+constexpr wchar_t kSingleInstanceMutex[] = L"Local\\Cyte.SingleInstance";
 
 // Places |size| in the centre of the monitor under |origin|, capped to that
 // monitor's work area. |size| and |placed| are in logical pixels: Create
@@ -134,7 +134,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   Win32Window::Size size(kDefaultWidth, kDefaultHeight);
   Win32Window::Point placed = origin;
   PlaceOnMonitor(origin, &size, &placed);
-  if (!window.Create(L"Ayte", placed, size)) {
+  if (!window.Create(L"Cyte", placed, size)) {
     return EXIT_FAILURE;
   }
   window.SetMinimumSize(Win32Window::Size(kMinClientWidth, kMinClientHeight));

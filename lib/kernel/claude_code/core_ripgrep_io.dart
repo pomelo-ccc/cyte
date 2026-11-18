@@ -4,7 +4,7 @@ import 'package:bao_agent/bao_agent.dart' show FileIndex;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 
-/// Ripgrep lookup helper for Ayte's built-in core.
+/// Ripgrep lookup helper for Cyte's built-in core.
 abstract final class CoreRipgrep {
   /// Ensures `rg` is left as configured on [environment]'s `PATH`.
   static Future<void> addTo(Map<String, String> environment) async {

@@ -524,7 +524,7 @@ class Bots extends ChangeNotifier implements ClaudeSdkGate {
         queuedInPlace: true,
       ),
       settings: {...settings, 'model': ?bot.model},
-      kernel: KernelRegistry.antigravity.id,
+      kernel: KernelRegistry.codebuddy.id,
     ),
     null => null,
   };

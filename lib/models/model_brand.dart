@@ -54,7 +54,7 @@ abstract final class ModelBrand {
     (_word(r'minimax|abab'), 'minimax'),
     (_word(r'doubao'), 'doubao'),
     (_word(r'seed'), 'bytedance'),
-    (_word(r'hunyuan'), 'hunyuan'),
+    (_word(r'hunyuan|hy(?:\d|[-_])'), 'hunyuan'),
     (_word(r'ernie|wenxin'), 'wenxin'),
     (_word(r'step-'), 'stepfun'),
     (_word(r'baichuan'), 'baichuan'),

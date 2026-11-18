@@ -1,4 +1,4 @@
-# Builds Ayte for macOS (arm64, x64), Windows (x64, arm64) and Linux (x64, arm64),
+# Builds Cyte for macOS (arm64, x64), Windows (x64, arm64) and Linux (x64, arm64),
 # signs the auto-update manifest (latest.json), and publishes all installers and
 # SSH remote server binaries to GitHub Releases.
 #
@@ -143,17 +143,17 @@ jobs:
           for arch in arm64 x64; do
             dir="$RUNNER_TEMP/launch-$arch"
             mkdir -p "$dir" "$dir-data"
-            ditto -x -k build/installers/Ayte-*-mac-$arch.zip "$dir"
-            AYTE_DATA_DIR="$dir-data" \
-              "$dir/Ayte.app/Contents/MacOS/Ayte" > "$dir.log" 2>&1 &
+            ditto -x -k build/installers/Cyte-*-mac-$arch.zip "$dir"
+            CYTE_DATA_DIR="$dir-data" \
+              "$dir/Cyte.app/Contents/MacOS/Cyte" > "$dir.log" 2>&1 &
             pid=$!
             sleep 15
             if ! kill -0 $pid 2>/dev/null; then
               cat "$dir.log"
-              echo "::error::Ayte ($arch) exited within 15 seconds of launch"
+              echo "::error::Cyte ($arch) exited within 15 seconds of launch"
               exit 1
             fi
-            echo "Ayte ($arch) is running after 15 seconds"
+            echo "Cyte ($arch) is running after 15 seconds"
             kill $pid
           done
       - uses: actions/upload-artifact@v6
@@ -161,8 +161,8 @@ jobs:
           name: macos
           if-no-files-found: error
           path: |
-            build/installers/Ayte-*.dmg
-            build/installers/Ayte-*-mac-*.zip
+            build/installers/Cyte-*.dmg
+            build/installers/Cyte-*-mac-*.zip
       - uses: actions/upload-artifact@v6
         with:
           name: symbols-macos
@@ -233,7 +233,7 @@ jobs:
         with:
           name: windows-${{ matrix.arch }}
           if-no-files-found: error
-          path: build/installers/Ayte-*-setup${{ env.ARCH_SUFFIX }}.exe
+          path: build/installers/Cyte-*-setup${{ env.ARCH_SUFFIX }}.exe
       - uses: actions/upload-artifact@v6
         with:
           name: symbols-windows-${{ matrix.arch }}
@@ -303,9 +303,9 @@ jobs:
       - name: Package the .deb and the tarball
         run: |
           sh tool/package_linux_deb.sh
-          dpkg-deb --info build/installers/Ayte-*.deb
-          dpkg-deb --contents build/installers/Ayte-*.deb | grep -q 'lib/libbao_iroh.so$'
-          need=$(dpkg-deb --field build/installers/Ayte-*.deb Depends \
+          dpkg-deb --info build/installers/Cyte-*.deb
+          dpkg-deb --contents build/installers/Cyte-*.deb | grep -q 'lib/libbao_iroh.so$'
+          need=$(dpkg-deb --field build/installers/Cyte-*.deb Depends \
             | sed -n 's/.*libc6 (>= \([0-9.]*\)).*/\1/p')
           have=$(ldd --version | head -1 | grep -o '[0-9.]*$')
           echo "glibc needed: $need, the image's: $have"
@@ -317,29 +317,29 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          apt-get install -y ./build/installers/Ayte-*.deb
+          apt-get install -y ./build/installers/Cyte-*.deb
           log="$RUNNER_TEMP/launch.log"
           mkdir -p "$HOME/.config/google-chrome"
           export XDG_RUNTIME_DIR="$RUNNER_TEMP/runtime"
           mkdir -m 700 "$XDG_RUNTIME_DIR"
           mkdir "$RUNNER_TEMP/launch-data"
-          AYTE_DATA_DIR="$RUNNER_TEMP/launch-data" \
-            dbus-run-session -- xvfb-run -a /opt/ayte/baocode > "$log" 2>&1 &
+          CYTE_DATA_DIR="$RUNNER_TEMP/launch-data" \
+            dbus-run-session -- xvfb-run -a /opt/cyte/baocode > "$log" 2>&1 &
           sleep 15
           if ! pgrep -x baocode > /dev/null; then
             cat "$log"
-            echo "::error::Ayte exited within 15 seconds of launch"
+            echo "::error::Cyte exited within 15 seconds of launch"
             exit 1
           fi
-          echo "Ayte is running after 15 seconds"
+          echo "Cyte is running after 15 seconds"
           manifest="$HOME/.config/google-chrome/NativeMessagingHosts/dev.baocode.browser.json"
           cat "$manifest"
-          grep -q '"path": "/opt/ayte/baocode-browser-host"' "$manifest"
+          grep -q '"path": "/opt/cyte/baocode-browser-host"' "$manifest"
           python3 - << 'EOF'
           import json, signal, struct, subprocess
           signal.alarm(10)
           host = subprocess.Popen(
-              ["/opt/ayte/baocode-browser-host",
+              ["/opt/cyte/baocode-browser-host",
                "chrome-extension://jfjagocghaaheooicmdnhcholmgdkngk/"],
               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
           while True:
@@ -357,8 +357,8 @@ jobs:
           name: linux-${{ matrix.arch }}
           if-no-files-found: error
           path: |
-            build/installers/Ayte-*.deb
-            build/installers/Ayte-*.tar.gz
+            build/installers/Cyte-*.deb
+            build/installers/Cyte-*.tar.gz
       - uses: actions/upload-artifact@v6
         with:
           name: symbols-linux-${{ matrix.arch }}
@@ -395,14 +395,14 @@ jobs:
         run: |
           mkdir -p out
           for arch in arm64 x64; do
-            cp dist/macos/Ayte-$MARKETING-$arch.dmg \
-              dist/macos/Ayte-$MARKETING-mac-$arch.zip out/
+            cp dist/macos/Cyte-$MARKETING-$arch.dmg \
+              dist/macos/Cyte-$MARKETING-mac-$arch.zip out/
           done
-          cp dist/windows-x64/Ayte-$MARKETING-setup.exe \
-            dist/windows-arm64/Ayte-$MARKETING-setup-arm64.exe out/
+          cp dist/windows-x64/Cyte-$MARKETING-setup.exe \
+            dist/windows-arm64/Cyte-$MARKETING-setup-arm64.exe out/
           for arch in x64 arm64; do
-            cp dist/linux-$arch/Ayte-$MARKETING-linux-*.deb \
-              dist/linux-$arch/Ayte-$MARKETING-linux-*.tar.gz out/
+            cp dist/linux-$arch/Cyte-$MARKETING-linux-*.deb \
+              dist/linux-$arch/Cyte-$MARKETING-linux-*.tar.gz out/
           done
           cp dist/remote/*.gz dist/remote/servers.json out/
           find out -type f | sort
@@ -422,14 +422,14 @@ jobs:
           done
           BAOCODE_UPDATE_SIGNING_KEY="$key" dart run tool/release_manifest.dart \
             --version "$VERSION" \
-            --windows out/Ayte-$MARKETING-setup.exe \
-            --windows-arm64 out/Ayte-$MARKETING-setup-arm64.exe \
-            --macos-arm64 out/Ayte-$MARKETING-mac-arm64.zip \
-            --macos-x64 out/Ayte-$MARKETING-mac-x64.zip \
-            --dmg-arm64 out/Ayte-$MARKETING-arm64.dmg \
-            --dmg-x64 out/Ayte-$MARKETING-x64.dmg \
-            --linux-x64 out/Ayte-$MARKETING-linux-amd64.deb \
-            --linux-arm64 out/Ayte-$MARKETING-linux-arm64.deb \
+            --windows out/Cyte-$MARKETING-setup.exe \
+            --windows-arm64 out/Cyte-$MARKETING-setup-arm64.exe \
+            --macos-arm64 out/Cyte-$MARKETING-mac-arm64.zip \
+            --macos-x64 out/Cyte-$MARKETING-mac-x64.zip \
+            --dmg-arm64 out/Cyte-$MARKETING-arm64.dmg \
+            --dmg-x64 out/Cyte-$MARKETING-x64.dmg \
+            --linux-x64 out/Cyte-$MARKETING-linux-amd64.deb \
+            --linux-arm64 out/Cyte-$MARKETING-linux-arm64.deb \
             --manifest out/latest.json \
             "${notes[@]}"
           rm -f "$key"
@@ -453,16 +453,16 @@ jobs:
             notes=(--generate-notes)
           fi
           assets=(
-            out/Ayte-$MARKETING-arm64.dmg
-            out/Ayte-$MARKETING-x64.dmg
-            out/Ayte-$MARKETING-mac-arm64.zip
-            out/Ayte-$MARKETING-mac-x64.zip
-            out/Ayte-$MARKETING-setup.exe
-            out/Ayte-$MARKETING-setup-arm64.exe
-            out/Ayte-$MARKETING-linux-amd64.deb
-            out/Ayte-$MARKETING-linux-arm64.deb
-            out/Ayte-$MARKETING-linux-amd64.tar.gz
-            out/Ayte-$MARKETING-linux-arm64.tar.gz
+            out/Cyte-$MARKETING-arm64.dmg
+            out/Cyte-$MARKETING-x64.dmg
+            out/Cyte-$MARKETING-mac-arm64.zip
+            out/Cyte-$MARKETING-mac-x64.zip
+            out/Cyte-$MARKETING-setup.exe
+            out/Cyte-$MARKETING-setup-arm64.exe
+            out/Cyte-$MARKETING-linux-amd64.deb
+            out/Cyte-$MARKETING-linux-arm64.deb
+            out/Cyte-$MARKETING-linux-amd64.tar.gz
+            out/Cyte-$MARKETING-linux-arm64.tar.gz
             out/servers.json
             out/baocode-server-*.gz
           )
@@ -470,4 +470,4 @@ jobs:
             assets+=(out/latest.json)
           fi
           gh release delete "v$MARKETING" --yes 2>/dev/null || true
-          gh release create "v$MARKETING" --title "Ayte $MARKETING" "${notes[@]}" "${assets[@]}"
+          gh release create "v$MARKETING" --title "Cyte $MARKETING" "${notes[@]}" "${assets[@]}"

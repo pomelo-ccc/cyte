@@ -34,7 +34,7 @@ class UpdateController {
 
   /// [version]'s release notes on GitHub Releases.
   static Uri changelogUrl(AppVersion version, String languageCode) => Uri.parse(
-    'https://github.com/pomelo-ccc/ayte/releases/tag/v${version.marketing}',
+    'https://github.com/pomelo-ccc/cyte/releases/tag/v${version.marketing}',
   );
 
   bool _restarting = false;

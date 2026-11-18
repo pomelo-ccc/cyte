@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'The language of Ayte\'s menus, views and messages. Changes apply at once.'**
+  /// **'The language of Cyte\'s menus, views and messages. Changes apply at once.'**
   String get languageSettingsDescription;
 
   /// Follow System, with the language the system's resolves to, named in its own language.
@@ -2873,7 +2873,7 @@ abstract class AppLocalizations {
   /// No description provided for @menuAboutBaoCode.
   ///
   /// In en, this message translates to:
-  /// **'About Ayte'**
+  /// **'About Cyte'**
   String get menuAboutBaoCode;
 
   /// Tooltip.
@@ -2951,7 +2951,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserOtherApp.
   ///
   /// In en, this message translates to:
-  /// **'Another Ayte is connected to the browser.'**
+  /// **'Another Cyte is connected to the browser.'**
   String get browserOtherApp;
 
   /// The card in the conversation while an agent watches the user do something in their browser (browser_watch), recording it.
@@ -2963,7 +2963,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserWatchHint.
   ///
   /// In en, this message translates to:
-  /// **'Do it in the Ayte tab of your browser. When you\'re done, click Done here or the Ayte button in the browser\'s toolbar.'**
+  /// **'Do it in the Cyte tab of your browser. When you\'re done, click Done here or the Cyte button in the browser\'s toolbar.'**
   String get browserWatchHint;
 
   /// No description provided for @browserWatchSteps.
@@ -6284,7 +6284,7 @@ abstract class AppLocalizations {
   /// **'Who the commits and pull requests an agent writes credit. Applies to agents started after a change; Claude Code only for now.'**
   String get generalSettingsCommitAttributionDescription;
 
-  /// Settings → General → Claude Code row: what runs Claude Code sessions, Ayte's built-in core (written in Dart) or the Claude Code CLI.
+  /// Settings → General → Claude Code row: what runs Claude Code sessions, Cyte's built-in core (written in Dart) or the Claude Code CLI.
   ///
   /// In en, this message translates to:
   /// **'Core'**
@@ -6293,10 +6293,10 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsClaudeCoreDescription.
   ///
   /// In en, this message translates to:
-  /// **'Antigravity CLI: uses your local Google Antigravity (agy) sign-in and setup. Built-in: comes with Ayte, using only the custom API providers added in Settings → Models. Changes apply to new sessions.'**
+  /// **'CodeBuddy CLI: uses your local Tencent CodeBuddy (codebuddy / cbc) sign-in and setup. Built-in: comes with Cyte, using only the custom API providers added in Settings → Models. Changes apply to new sessions.'**
   String get generalSettingsClaudeCoreDescription;
 
-  /// Claude Code core choice: Ayte's own agent core, written in Dart and run inside the app.
+  /// Claude Code core choice: Cyte's own agent core, written in Dart and run inside the app.
   ///
   /// In en, this message translates to:
   /// **'Built-in'**
@@ -6533,7 +6533,7 @@ abstract class AppLocalizations {
   /// No description provided for @trayShow.
   ///
   /// In en, this message translates to:
-  /// **'Show Ayte'**
+  /// **'Show Cyte'**
   String get trayShow;
 
   /// Tray menu header over the agents waiting on the user.
@@ -6557,7 +6557,7 @@ abstract class AppLocalizations {
   /// No description provided for @trayQuit.
   ///
   /// In en, this message translates to:
-  /// **'Quit Ayte'**
+  /// **'Quit Cyte'**
   String get trayQuit;
 
   /// Notification: the agent waits on the user.
@@ -8850,7 +8850,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbUnknownContextKeys.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{Ayte does not know the context key {keys}: this keybinding never applies.} other{Ayte does not know the context keys {keys}: this keybinding never applies.}}'**
+  /// **'{count, plural, =1{Cyte does not know the context key {keys}: this keybinding never applies.} other{Cyte does not know the context keys {keys}: this keybinding never applies.}}'**
   String kbUnknownContextKeys(int count, String keys);
 
   /// No description provided for @kbChangeFailed.
@@ -8988,7 +8988,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbCannotReadKey.
   ///
   /// In en, this message translates to:
-  /// **'Ayte cannot read the key “{key}”: this keybinding never applies.'**
+  /// **'Cyte cannot read the key “{key}”: this keybinding never applies.'**
   String kbCannotReadKey(String key);
 
   /// No description provided for @kbNotSupported.
@@ -9000,7 +9000,7 @@ abstract class AppLocalizations {
   /// No description provided for @kbNotSupportedHover.
   ///
   /// In en, this message translates to:
-  /// **'Ayte does not have this command: the keybinding is kept, but does nothing.'**
+  /// **'Cyte does not have this command: the keybinding is kept, but does nothing.'**
   String get kbNotSupportedHover;
 
   /// No description provided for @kbPressKeys.
@@ -9090,37 +9090,37 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirAlreadyHolds.
   ///
   /// In en, this message translates to:
-  /// **'The folder already holds Ayte data'**
+  /// **'The folder already holds Cyte data'**
   String get dataDirAlreadyHolds;
 
   /// No description provided for @dataDirMoveBack.
   ///
   /// In en, this message translates to:
-  /// **'Move Ayte\'s data back to the default folder?'**
+  /// **'Move Cyte\'s data back to the default folder?'**
   String get dataDirMoveBack;
 
   /// No description provided for @dataDirMoveHere.
   ///
   /// In en, this message translates to:
-  /// **'Move Ayte\'s data to this folder?'**
+  /// **'Move Cyte\'s data to this folder?'**
   String get dataDirMoveHere;
 
   /// No description provided for @dataDirUseAsIsDetail.
   ///
   /// In en, this message translates to:
-  /// **'After a restart Ayte uses the data there as it is; nothing is copied, and the current folder keeps yours.'**
+  /// **'After a restart Cyte uses the data there as it is; nothing is copied, and the current folder keeps yours.'**
   String get dataDirUseAsIsDetail;
 
   /// No description provided for @dataDirCopyDetail.
   ///
   /// In en, this message translates to:
-  /// **'Ayte copies its settings, keybindings, language servers and state there, and uses that folder after a restart.'**
+  /// **'Cyte copies its settings, keybindings, language servers and state there, and uses that folder after a restart.'**
   String get dataDirCopyDetail;
 
   /// No description provided for @dataDirOtherFiles.
   ///
   /// In en, this message translates to:
-  /// **'The folder holds other files: they stay, beside Ayte\'s own.'**
+  /// **'The folder holds other files: they stay, beside Cyte\'s own.'**
   String get dataDirOtherFiles;
 
   /// No description provided for @dataDirUseItsData.
@@ -9162,13 +9162,13 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRestartTitle.
   ///
   /// In en, this message translates to:
-  /// **'Restart Ayte to use the new data folder'**
+  /// **'Restart Cyte to use the new data folder'**
   String get dataDirRestartTitle;
 
   /// No description provided for @dataDirRestartDetail.
   ///
   /// In en, this message translates to:
-  /// **'Ayte keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.'**
+  /// **'Cyte keeps using {current} until it restarts. The next start uses {next}, and offers to remove what is left in the old one.'**
   String dataDirRestartDetail(String current, String next);
 
   /// No description provided for @dataDirTheNewFolder.
@@ -9180,7 +9180,7 @@ abstract class AppLocalizations {
   /// No description provided for @quitConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Quit Ayte?'**
+  /// **'Quit Cyte?'**
   String get quitConfirmMessage;
 
   /// No description provided for @quitConfirmDetail.
@@ -9240,7 +9240,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirDescription.
   ///
   /// In en, this message translates to:
-  /// **'Where Ayte keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); Ayte never moves or removes those.'**
+  /// **'Where Cyte keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); Cyte never moves or removes those.'**
   String get dataDirDescription;
 
   /// No description provided for @dataDirCurrentFolder.
@@ -9288,19 +9288,19 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirSettingUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'Ayte\'s data folder setting cannot be read'**
+  /// **'Cyte\'s data folder setting cannot be read'**
   String get dataDirSettingUnreadable;
 
   /// No description provided for @dataDirCannotWrite.
   ///
   /// In en, this message translates to:
-  /// **'Ayte cannot write to its data folder'**
+  /// **'Cyte cannot write to its data folder'**
   String get dataDirCannotWrite;
 
   /// No description provided for @dataDirUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Ayte\'s data folder is not available'**
+  /// **'Cyte\'s data folder is not available'**
   String get dataDirUnavailable;
 
   /// No description provided for @dataDirWhereEnv.
@@ -9312,7 +9312,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirWhereFixPointer.
   ///
   /// In en, this message translates to:
-  /// **'Fix or delete {file} and try again; Ayte changes it only if you choose another folder.'**
+  /// **'Fix or delete {file} and try again; Cyte changes it only if you choose another folder.'**
   String dataDirWhereFixPointer(String file);
 
   /// No description provided for @dataDirWherePointer.
@@ -9348,13 +9348,13 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRemoveOldTitle.
   ///
   /// In en, this message translates to:
-  /// **'Remove the data Ayte left in its previous folder?'**
+  /// **'Remove the data Cyte left in its previous folder?'**
   String get dataDirRemoveOldTitle;
 
   /// No description provided for @dataDirRemoveOldDetail.
   ///
   /// In en, this message translates to:
-  /// **'Ayte now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.'**
+  /// **'Cyte now keeps its data in {current}. Only its own items are removed from the previous folder ({items}); the folder and everything else in it stay.'**
   String dataDirRemoveOldDetail(String current, String items);
 
   /// No description provided for @dataDirRemove.
@@ -9378,7 +9378,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataDirRemoveOldInUseDetail.
   ///
   /// In en, this message translates to:
-  /// **'Files in {items} are in use, perhaps by another program. Everything else was removed; Ayte offers to remove the rest the next time it starts.'**
+  /// **'Files in {items} are in use, perhaps by another program. Everything else was removed; Cyte offers to remove the rest the next time it starts.'**
   String dataDirRemoveOldInUseDetail(String items);
 
   /// No description provided for @impTitle.
@@ -9708,7 +9708,7 @@ abstract class AppLocalizations {
   /// No description provided for @shellCommandOccupied.
   ///
   /// In en, this message translates to:
-  /// **'{path} already runs another app\'s \'{name}\' command. Replace it with Ayte\'s?'**
+  /// **'{path} already runs another app\'s \'{name}\' command. Replace it with Cyte\'s?'**
   String shellCommandOccupied(String path, String name);
 
   /// No description provided for @shellCommandReplace.
@@ -9738,7 +9738,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsMainWindowDescription.
   ///
   /// In en, this message translates to:
-  /// **'What Ayte opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.'**
+  /// **'What Cyte opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.'**
   String get generalSettingsMainWindowDescription;
 
   /// No description provided for @generalSettingsMainWindowLabel.
@@ -9834,7 +9834,7 @@ abstract class AppLocalizations {
   /// No description provided for @claudePathInUseDownloaded.
   ///
   /// In en, this message translates to:
-  /// **'In use: Claude Code {version}, downloaded by Ayte'**
+  /// **'In use: Claude Code {version}, downloaded by Cyte'**
   String claudePathInUseDownloaded(String version);
 
   /// No description provided for @claudePathMissing.
@@ -10116,7 +10116,7 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsShellCommandDescription.
   ///
   /// In en, this message translates to:
-  /// **'Open files and folders in Ayte from a terminal: \'code <path>\'. Installed at {location}.'**
+  /// **'Open files and folders in Cyte from a terminal: \'code <path>\'. Installed at {location}.'**
   String generalSettingsShellCommandDescription(String location);
 
   /// No description provided for @generalSettingsShellCommandInstalled.
@@ -10668,7 +10668,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsFeaturedNote.
   ///
   /// In en, this message translates to:
-  /// **'These sites are officially listed by Ayte'**
+  /// **'These sites are officially listed by Cyte'**
   String get modelsFeaturedNote;
 
   /// No description provided for @modelsFeaturedNoteHow.
@@ -10782,7 +10782,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsImportInvalidDetail.
   ///
   /// In en, this message translates to:
-  /// **'It needs a base URL (http or https) and a protocol Ayte knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.'**
+  /// **'It needs a base URL (http or https) and a protocol Cyte knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.'**
   String get modelsImportInvalidDetail;
 
   /// No description provided for @modelsAddProvider.
@@ -10938,7 +10938,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsAccountsImportConfirmDetail.
   ///
   /// In en, this message translates to:
-  /// **'Ayte will keep the credentials securely without changing the original file or actively refreshing tokens during import. Renewing them later may rotate the refresh token and require the original tool to sign in again. Only import credentials you are authorized to use.'**
+  /// **'Cyte will keep the credentials securely without changing the original file or actively refreshing tokens during import. Renewing them later may rotate the refresh token and require the original tool to sign in again. Only import credentials you are authorized to use.'**
   String get modelsAccountsImportConfirmDetail;
 
   /// No description provided for @modelsAccountsImportFailed.
@@ -11544,7 +11544,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelsRolesDescription.
   ///
   /// In en, this message translates to:
-  /// **'Which model Claude Code uses for each part of its work. Unset, the model picked stands in. All but the main model may be another upstream\'s: Ayte\'s local proxy sends their requests there.'**
+  /// **'Which model Claude Code uses for each part of its work. Unset, the model picked stands in. All but the main model may be another upstream\'s: Cyte\'s local proxy sends their requests there.'**
   String get modelsRolesDescription;
 
   /// No description provided for @modelsRoleUnset.
@@ -12108,7 +12108,7 @@ abstract class AppLocalizations {
   /// No description provided for @updatesSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Ayte looks for new versions on kestrel.dev.'**
+  /// **'Cyte looks for new versions on kestrel.dev.'**
   String get updatesSettingsDescription;
 
   /// No description provided for @updateCurrentVersion.
@@ -12144,37 +12144,37 @@ abstract class AppLocalizations {
   /// No description provided for @updateUpToDate.
   ///
   /// In en, this message translates to:
-  /// **'Ayte is up to date.'**
+  /// **'Cyte is up to date.'**
   String get updateUpToDate;
 
   /// No description provided for @updateAvailable.
   ///
   /// In en, this message translates to:
-  /// **'Ayte {version} is available.'**
+  /// **'Cyte {version} is available.'**
   String updateAvailable(String version);
 
   /// No description provided for @updateReady.
   ///
   /// In en, this message translates to:
-  /// **'Ayte {version} has been downloaded. Restart to update.'**
+  /// **'Cyte {version} has been downloaded. Restart to update.'**
   String updateReady(String version);
 
   /// No description provided for @updateDownloading.
   ///
   /// In en, this message translates to:
-  /// **'Downloading Ayte {version}…'**
+  /// **'Downloading Cyte {version}…'**
   String updateDownloading(String version);
 
   /// No description provided for @updateDownloadingProgress.
   ///
   /// In en, this message translates to:
-  /// **'Downloading Ayte {version}… {percent}%'**
+  /// **'Downloading Cyte {version}… {percent}%'**
   String updateDownloadingProgress(String version, int percent);
 
   /// No description provided for @updateMandatory.
   ///
   /// In en, this message translates to:
-  /// **'This version of Ayte is no longer supported. Update to {version} to keep using it.'**
+  /// **'This version of Cyte is no longer supported. Update to {version} to keep using it.'**
   String updateMandatory(String version);
 
   /// No description provided for @updateRestartNow.
@@ -12204,7 +12204,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t update Ayte: {error}'**
+  /// **'Couldn\'t update Cyte: {error}'**
   String updateFailed(String error);
 
   /// No description provided for @updateCheckFailed.
@@ -12222,13 +12222,13 @@ abstract class AppLocalizations {
   /// No description provided for @updateUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'This build of Ayte doesn\'t update itself.'**
+  /// **'This build of Cyte doesn\'t update itself.'**
   String get updateUnsupported;
 
   /// No description provided for @updateManual.
   ///
   /// In en, this message translates to:
-  /// **'Ayte can\'t update itself here ({reason}). Download the new version from kestrel.dev.'**
+  /// **'Cyte can\'t update itself here ({reason}). Download the new version from kestrel.dev.'**
   String updateManual(String reason);
 
   /// No description provided for @updateOpenDownloadPage.
@@ -12240,7 +12240,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateUnfinished.
   ///
   /// In en, this message translates to:
-  /// **'Ayte {version} wasn\'t installed: this is still {current}. Try again from Settings > Updates, or download it from kestrel.dev.'**
+  /// **'Cyte {version} wasn\'t installed: this is still {current}. Try again from Settings > Updates, or download it from kestrel.dev.'**
   String updateUnfinished(String version, String current);
 
   /// No description provided for @updateShowLog.
@@ -12270,7 +12270,7 @@ abstract class AppLocalizations {
   /// No description provided for @updateModeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Whether Ayte looks for new versions by itself (update.mode).'**
+  /// **'Whether Cyte looks for new versions by itself (update.mode).'**
   String get updateModeDescription;
 
   /// The update mode dropdown, as read out.
@@ -12306,7 +12306,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Send Ayte\'s error logs and the crash and hang reports the system kept of it to its developers to help track down a problem. Nothing is sent until you upload.'**
+  /// **'Send Cyte\'s error logs and the crash and hang reports the system kept of it to its developers to help track down a problem. Nothing is sent until you upload.'**
   String get diagnosticsDescription;
 
   /// No description provided for @diagnosticsUpload.
@@ -12378,7 +12378,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsUploadedDetail.
   ///
   /// In en, this message translates to:
-  /// **'Give this ID to Ayte\'s developers so they can find these logs.'**
+  /// **'Give this ID to Cyte\'s developers so they can find these logs.'**
   String get diagnosticsUploadedDetail;
 
   /// No description provided for @diagnosticsOmittedDumps.
@@ -13008,13 +13008,13 @@ abstract class AppLocalizations {
   /// No description provided for @generalSettingsContextMenuDescription.
   ///
   /// In en, this message translates to:
-  /// **'Adds \"Open with Ayte\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.'**
+  /// **'Adds \"Open with Cyte\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.'**
   String get generalSettingsContextMenuDescription;
 
   /// No description provided for @generalSettingsContextMenuMacNote.
   ///
   /// In en, this message translates to:
-  /// **'Finder\'s own setting is in System Settings\' extensions, where the Ayte extension can also be turned on and off.'**
+  /// **'Finder\'s own setting is in System Settings\' extensions, where the Cyte extension can also be turned on and off.'**
   String get generalSettingsContextMenuMacNote;
 
   /// No description provided for @generalSettingsContextMenuOn.
@@ -13233,7 +13233,7 @@ abstract class AppLocalizations {
   /// **'Installing Claude Code on {host}… {percent}%'**
   String remoteInstallingClaudeProgress(String host, int percent);
 
-  /// Shown over the chat while Claude Code is downloaded into Ayte's data folder, the user having none that runs (or only one too old), before the agent starts.
+  /// Shown over the chat while Claude Code is downloaded into Cyte's data folder, the user having none that runs (or only one too old), before the agent starts.
   ///
   /// In en, this message translates to:
   /// **'Downloading Claude Code… {percent}%'**
@@ -13296,7 +13296,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipsSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Set Up Ayte'**
+  /// **'Set Up Cyte'**
   String get tipsSetupTitle;
 
   /// No description provided for @tipsSetupCount.
@@ -13350,7 +13350,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipsUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Ayte was updated to {version}. New: {features}.'**
+  /// **'Cyte was updated to {version}. New: {features}.'**
   String tipsUpdated(String version, String features);
 
   /// No description provided for @tipsListSeparator.
@@ -13374,7 +13374,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipContextMenuBody.
   ///
   /// In en, this message translates to:
-  /// **'Open files and folders in Ayte from their context menu.'**
+  /// **'Open files and folders in Cyte from their context menu.'**
   String get tipContextMenuBody;
 
   /// No description provided for @tipShellCommandTitle.
@@ -13386,7 +13386,7 @@ abstract class AppLocalizations {
   /// No description provided for @tipShellCommandBody.
   ///
   /// In en, this message translates to:
-  /// **'Open folders in Ayte from a terminal: {name} <path>.'**
+  /// **'Open folders in Cyte from a terminal: {name} <path>.'**
   String tipShellCommandBody(String name);
 
   /// No description provided for @tipImportKeybindingsTitle.
@@ -13416,19 +13416,19 @@ abstract class AppLocalizations {
   /// No description provided for @cmdStarOnGitHub.
   ///
   /// In en, this message translates to:
-  /// **'Star Ayte on GitHub'**
+  /// **'Star Cyte on GitHub'**
   String get cmdStarOnGitHub;
 
   /// No description provided for @starPromptMessage.
   ///
   /// In en, this message translates to:
-  /// **'Enjoying Ayte?'**
+  /// **'Enjoying Cyte?'**
   String get starPromptMessage;
 
   /// No description provided for @starPromptDetail.
   ///
   /// In en, this message translates to:
-  /// **'Ayte is free and open source. If it helps you, a star on GitHub helps other people find it.'**
+  /// **'Cyte is free and open source. If it helps you, a star on GitHub helps other people find it.'**
   String get starPromptDetail;
 
   /// No description provided for @starPromptStar.
@@ -13728,7 +13728,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'How Ayte and the Claude Code it starts reach the internet.'**
+  /// **'How Cyte and the Claude Code it starts reach the internet.'**
   String get networkSettingsDescription;
 
   /// No description provided for @networkProxy.
@@ -13740,7 +13740,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkProxyDescription.
   ///
   /// In en, this message translates to:
-  /// **'The proxy for Ayte and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.'**
+  /// **'The proxy for Cyte and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.'**
   String get networkProxyDescription;
 
   /// The proxy dropdown, as read out.
@@ -13836,7 +13836,7 @@ abstract class AppLocalizations {
   /// No description provided for @networkProxyStatusAutoConfig.
   ///
   /// In en, this message translates to:
-  /// **'Direct: the system sets its proxy with an auto-config (PAC) file, which Ayte doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.'**
+  /// **'Direct: the system sets its proxy with an auto-config (PAC) file, which Cyte doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.'**
   String get networkProxyStatusAutoConfig;
 
   /// No description provided for @networkProxyRefresh.
@@ -13980,7 +13980,7 @@ abstract class AppLocalizations {
   /// No description provided for @extsCapabilityPartialDetail.
   ///
   /// In en, this message translates to:
-  /// **'Its themes apply; the rest of it does nothing in Ayte.'**
+  /// **'Its themes apply; the rest of it does nothing in Cyte.'**
   String get extsCapabilityPartialDetail;
 
   /// No description provided for @extsEngineIncompatible.
@@ -14346,7 +14346,7 @@ abstract class AppLocalizations {
   /// No description provided for @extsCapabilityUnsupportedDetail.
   ///
   /// In en, this message translates to:
-  /// **'It has no color or file icon theme: Ayte only uses themes from extensions.'**
+  /// **'It has no color or file icon theme: Cyte only uses themes from extensions.'**
   String get extsCapabilityUnsupportedDetail;
 
   /// No description provided for @extsFindingCode.
@@ -14526,7 +14526,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobileSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Follow and drive this computer\'s agents from Ayte on your phone: directly on the same network, across the internet through a hole punched in the routers between them, or through Ayte\'s relay when neither works. What goes between them is end-to-end encrypted; a relay cannot read it.'**
+  /// **'Follow and drive this computer\'s agents from Cyte on your phone: directly on the same network, across the internet through a hole punched in the routers between them, or through Cyte\'s relay when neither works. What goes between them is end-to-end encrypted; a relay cannot read it.'**
   String get mobileSettingsDescription;
 
   /// No description provided for @mobileAllow.
@@ -14586,7 +14586,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobilePairDescription.
   ///
   /// In en, this message translates to:
-  /// **'Scan the code with Ayte on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.'**
+  /// **'Scan the code with Cyte on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.'**
   String get mobilePairDescription;
 
   /// No description provided for @mobilePairShow.
@@ -14838,7 +14838,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobileRelayModeAutoDescription.
   ///
   /// In en, this message translates to:
-  /// **'Ayte\'s relays, the nearest that answers.'**
+  /// **'Cyte\'s relays, the nearest that answers.'**
   String get mobileRelayModeAutoDescription;
 
   /// No description provided for @mobileRelayModePinned.
@@ -14850,7 +14850,7 @@ abstract class AppLocalizations {
   /// No description provided for @mobileRelayModePinnedDescription.
   ///
   /// In en, this message translates to:
-  /// **'Only the one picked: one of Ayte\'s, or a custom address.'**
+  /// **'Only the one picked: one of Cyte\'s, or a custom address.'**
   String get mobileRelayModePinnedDescription;
 
   /// No description provided for @mobileRelayModeDirect.
@@ -15780,7 +15780,7 @@ abstract class AppLocalizations {
   /// No description provided for @stashImplement.
   ///
   /// In en, this message translates to:
-  /// **'Implement in Ayte'**
+  /// **'Implement in Cyte'**
   String get stashImplement;
 
   /// No description provided for @stashImplementHow.
@@ -15978,7 +15978,7 @@ abstract class AppLocalizations {
   /// No description provided for @stashSettingsDirectoryRestart.
   ///
   /// In en, this message translates to:
-  /// **'Takes effect after Ayte restarts.'**
+  /// **'Takes effect after Cyte restarts.'**
   String get stashSettingsDirectoryRestart;
 
   /// Opens the list of every stash beside the one written in, in the stash panel.
@@ -16224,7 +16224,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountsSignOutDetail.
   ///
   /// In en, this message translates to:
-  /// **'The token is deleted from this computer. To revoke Ayte\'s access altogether, revoke it in your {forge} settings too.'**
+  /// **'The token is deleted from this computer. To revoke Cyte\'s access altogether, revoke it in your {forge} settings too.'**
   String accountsSignOutDetail(String forge);
 
   /// No description provided for @accountsRevoke.
@@ -16302,7 +16302,7 @@ abstract class AppLocalizations {
   /// What a self-signed or privately issued forge certificate is, before the user confirms it.
   ///
   /// In en, this message translates to:
-  /// **'The certificate of {host} cannot be verified ({issuer}).\n\nSHA-256 fingerprint:\n{fingerprint}\n\nTrusting it lets Ayte reach this server, and only the certificate with this fingerprint is accepted. You are asked again if the certificate changes.'**
+  /// **'The certificate of {host} cannot be verified ({issuer}).\n\nSHA-256 fingerprint:\n{fingerprint}\n\nTrusting it lets Cyte reach this server, and only the certificate with this fingerprint is accepted. You are asked again if the certificate changes.'**
   String accountsCertificateDetail(
     String host,
     String issuer,
@@ -16324,7 +16324,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountsBrowserDetail.
   ///
   /// In en, this message translates to:
-  /// **'Enter this code on {host} to let Ayte access your account:'**
+  /// **'Enter this code on {host} to let Cyte access your account:'**
   String accountsBrowserDetail(String host);
 
   /// No description provided for @accountsCopyAndOpen.
@@ -16696,7 +16696,7 @@ abstract class AppLocalizations {
   /// No description provided for @stashWelcomeAgent.
   ///
   /// In en, this message translates to:
-  /// **'Click Implement in Ayte, or mention it in a conversation; the conversation and the stash stay linked.'**
+  /// **'Click Implement in Cyte, or mention it in a conversation; the conversation and the stash stay linked.'**
   String get stashWelcomeAgent;
 
   /// No description provided for @stashWelcomeTrackTitle.
@@ -16816,7 +16816,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserSettingsNotRunningDescription.
   ///
   /// In en, this message translates to:
-  /// **'Open a browser with Ayte\'s extension: it connects automatically.'**
+  /// **'Open a browser with Cyte\'s extension: it connects automatically.'**
   String get browserSettingsNotRunningDescription;
 
   /// No description provided for @browserSettingsSandboxed.
@@ -16828,7 +16828,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserSettingsSandboxedDescription.
   ///
   /// In en, this message translates to:
-  /// **'Their sandbox keeps Ayte\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.'**
+  /// **'Their sandbox keeps Cyte\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.'**
   String get browserSettingsSandboxedDescription;
 
   /// A browser connected, by its name (Google Chrome, Microsoft Edge…).
@@ -16837,13 +16837,13 @@ abstract class AppLocalizations {
   /// **'{browser} connected'**
   String browserSettingsConnected(String browser);
 
-  /// A browser connected whose extension Ayte cannot use: one too old, or newer than the app.
+  /// A browser connected whose extension Cyte cannot use: one too old, or newer than the app.
   ///
   /// In en, this message translates to:
   /// **'{browser}: extension version doesn\'t match'**
   String browserSettingsIncompatible(String browser);
 
-  /// The version of Ayte's extension in a connected browser.
+  /// The version of Cyte's extension in a connected browser.
   ///
   /// In en, this message translates to:
   /// **'Extension {version}'**
@@ -16858,7 +16858,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserSettingsAppOld.
   ///
   /// In en, this message translates to:
-  /// **'The extension is newer than this Ayte. Update Ayte.'**
+  /// **'The extension is newer than this Cyte. Update Cyte.'**
   String get browserSettingsAppOld;
 
   /// No description provided for @browserSettingsNoFileAccess.
@@ -16870,7 +16870,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserSettingsNoFileAccessDescription.
   ///
   /// In en, this message translates to:
-  /// **'Agents can\'t open local HTML files or upload files. In chrome://extensions, click Details on Ayte and turn on Allow access to file URLs.'**
+  /// **'Agents can\'t open local HTML files or upload files. In chrome://extensions, click Details on Cyte and turn on Allow access to file URLs.'**
   String get browserSettingsNoFileAccessDescription;
 
   /// No description provided for @browserSettingsInstall.
@@ -16930,7 +16930,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserHistoryDescription.
   ///
   /// In en, this message translates to:
-  /// **'What the tabs shared with Ayte do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.'**
+  /// **'What the tabs shared with Cyte do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.'**
   String get browserHistoryDescription;
 
   /// No description provided for @browserHistoryDetailed.
@@ -16996,7 +16996,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserWelcomeLead.
   ///
   /// In en, this message translates to:
-  /// **'With Ayte\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.'**
+  /// **'With Cyte\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.'**
   String get browserWelcomeLead;
 
   /// No description provided for @browserWelcomeSharedTitle.
@@ -17008,7 +17008,7 @@ abstract class AppLocalizations {
   /// No description provided for @browserWelcomeShared.
   ///
   /// In en, this message translates to:
-  /// **'They work in the yellow Ayte tab group alone; your other tabs stay yours.'**
+  /// **'They work in the yellow Cyte tab group alone; your other tabs stay yours.'**
   String get browserWelcomeShared;
 
   /// No description provided for @browserWelcomeWatchTitle.
@@ -17104,7 +17104,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelWelcomeLead.
   ///
   /// In en, this message translates to:
-  /// **'Ayte runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.'**
+  /// **'Cyte runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.'**
   String get modelWelcomeLead;
 
   /// No description provided for @modelWelcomeAnyTitle.
@@ -17458,7 +17458,7 @@ abstract class AppLocalizations {
   /// No description provided for @sshServerCoreBuiltinHint.
   ///
   /// In en, this message translates to:
-  /// **'Ayte\'s own core: it runs on the upstreams of Settings → Models.'**
+  /// **'Cyte\'s own core: it runs on the upstreams of Settings → Models.'**
   String get sshServerCoreBuiltinHint;
 
   /// No description provided for @sshServerCoreCliHint.
@@ -17590,7 +17590,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Ayte'**
+  /// **'Welcome to Cyte'**
   String get channelSetupTitle;
 
   /// No description provided for @channelSetupLead.
@@ -17608,7 +17608,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupStep.
   ///
   /// In en, this message translates to:
-  /// **'Ayte opens kestrel.dev in your browser. Once the page says it\'s done, Ayte continues on its own.'**
+  /// **'Cyte opens kestrel.dev in your browser. Once the page says it\'s done, Cyte continues on its own.'**
   String get channelSetupStep;
 
   /// No description provided for @channelSetupWaitingTitle.
@@ -17620,7 +17620,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupWaiting.
   ///
   /// In en, this message translates to:
-  /// **'Once the page says it\'s done, Ayte continues on its own. Closed the page by mistake? Open it again.'**
+  /// **'Once the page says it\'s done, Cyte continues on its own. Closed the page by mistake? Open it again.'**
   String get channelSetupWaiting;
 
   /// No description provided for @channelSetupOpenFailedTitle.
@@ -17632,7 +17632,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupOpenFailed.
   ///
   /// In en, this message translates to:
-  /// **'Copy this address and open it in your browser. Once the page says it\'s done, Ayte continues on its own.'**
+  /// **'Copy this address and open it in your browser. Once the page says it\'s done, Cyte continues on its own.'**
   String get channelSetupOpenFailed;
 
   /// No description provided for @channelSetupAddressCopied.
@@ -17698,7 +17698,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupLinkOther.
   ///
   /// In en, this message translates to:
-  /// **'That link is for another Ayte install. Use the page this Ayte opened.'**
+  /// **'That link is for another Cyte install. Use the page this Cyte opened.'**
   String get channelSetupLinkOther;
 
   /// No description provided for @channelSetupTrouble.
@@ -17728,7 +17728,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupPrivate.
   ///
   /// In en, this message translates to:
-  /// **'The page only tells Ayte where you heard of it, like a video or a website.'**
+  /// **'The page only tells Cyte where you heard of it, like a video or a website.'**
   String get channelSetupPrivate;
 
   /// No description provided for @channelSetupFindingTitle.
@@ -17752,7 +17752,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelSetupSiteOffline.
   ///
   /// In en, this message translates to:
-  /// **'Ayte needs to be online to read your channel. Check your connection and retry.'**
+  /// **'Cyte needs to be online to read your channel. Check your connection and retry.'**
   String get channelSetupSiteOffline;
 
   /// No description provided for @channelSetupUnavailableTitle.
@@ -17842,7 +17842,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelAccountSignOutDetail.
   ///
   /// In en, this message translates to:
-  /// **'You\'ll need to sign in to {channel} again to keep using Ayte.'**
+  /// **'You\'ll need to sign in to {channel} again to keep using Cyte.'**
   String channelAccountSignOutDetail(String channel);
 
   /// No description provided for @channelAccountOpenSite.
@@ -17938,7 +17938,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutTagline.
   ///
   /// In en, this message translates to:
-  /// **'Native desktop workbench for Google Antigravity (agy)'**
+  /// **'Native desktop workbench for Tencent CodeBuddy (codebuddy / cbc)'**
   String get aboutTagline;
 
   /// No description provided for @aboutVersion.
@@ -18256,7 +18256,7 @@ abstract class AppLocalizations {
   /// No description provided for @stashImplementEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Write something first, then implement it in Ayte'**
+  /// **'Write something first, then implement it in Cyte'**
   String get stashImplementEmpty;
 
   /// No description provided for @stashIssueDuplicateBanner.
@@ -21550,7 +21550,7 @@ abstract class AppLocalizations {
   /// No description provided for @ustatConversationEmptyDetail.
   ///
   /// In en, this message translates to:
-  /// **'Only conversations on a custom upstream are counted: Claude\'s official service does not go through Ayte\'s proxy.'**
+  /// **'Only conversations on a custom upstream are counted: Claude\'s official service does not go through Cyte\'s proxy.'**
   String get ustatConversationEmptyDetail;
 
   /// No description provided for @ustatRecordOff.
@@ -21586,7 +21586,7 @@ abstract class AppLocalizations {
   /// No description provided for @ustatRecordDescription.
   ///
   /// In en, this message translates to:
-  /// **'Claude Code\'s own calls are read from what it prints; sessions on a custom upstream go through Ayte\'s local proxy, which keeps each call. Applies to agents started from now on.'**
+  /// **'Claude Code\'s own calls are read from what it prints; sessions on a custom upstream go through Cyte\'s local proxy, which keeps each call. Applies to agents started from now on.'**
   String get ustatRecordDescription;
 
   /// No description provided for @ustatRecordOffDescription.
@@ -22270,7 +22270,7 @@ abstract class AppLocalizations {
   /// No description provided for @ustatPricesAgentHint.
   ///
   /// In en, this message translates to:
-  /// **'Ayte can keep these for you: ask it in a chat to look up the current prices of these models and update them. It checks the upstream\'s own pricing page and writes them here.'**
+  /// **'Cyte can keep these for you: ask it in a chat to look up the current prices of these models and update them. It checks the upstream\'s own pricing page and writes them here.'**
   String get ustatPricesAgentHint;
 
   /// No description provided for @ustatPriceCurrency.

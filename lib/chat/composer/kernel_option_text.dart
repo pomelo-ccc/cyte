@@ -13,7 +13,7 @@ KernelOption localizedKernelOption(
 ) {
   final text = switch ((kernel, kind, option.id)) {
     (
-      'claude-code' || 'antigravity-cli',
+      'claude-code' || 'codebuddy-cli',
       KernelChoiceKind.permission,
       'default',
     ) =>
@@ -22,7 +22,7 @@ KernelOption localizedKernelOption(
         l10n.composerApprovalDefaultDetail,
       ),
     (
-      'claude-code' || 'antigravity-cli',
+      'claude-code' || 'codebuddy-cli',
       KernelChoiceKind.permission,
       'acceptEdits',
     ) =>
@@ -31,7 +31,7 @@ KernelOption localizedKernelOption(
         l10n.composerApprovalAcceptEditsDetail,
       ),
     (
-      'claude-code' || 'antigravity-cli',
+      'claude-code' || 'codebuddy-cli',
       KernelChoiceKind.permission,
       'auto',
     ) =>
@@ -40,7 +40,7 @@ KernelOption localizedKernelOption(
         l10n.composerApprovalAutoDetail,
       ),
     (
-      'claude-code' || 'antigravity-cli',
+      'claude-code' || 'codebuddy-cli',
       KernelChoiceKind.permission,
       'dontAsk',
     ) =>
@@ -49,7 +49,7 @@ KernelOption localizedKernelOption(
         l10n.composerApprovalDontAskDetail,
       ),
     (
-      'claude-code' || 'antigravity-cli',
+      'claude-code' || 'codebuddy-cli',
       KernelChoiceKind.permission,
       'bypassPermissions',
     ) =>

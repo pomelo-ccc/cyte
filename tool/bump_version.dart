@@ -72,12 +72,12 @@ Future<void> main(List<String> arguments) async {
     final before = readme.readAsStringSync();
     final updated = before
         .replaceAll(
-          RegExp(r'/releases/download/v\d+\.\d+\.\d+/Ayte-\d+\.\d+\.\d+-'),
-          '/releases/download/v${next.marketing}/Ayte-${next.marketing}-',
+          RegExp(r'/releases/download/v\d+\.\d+\.\d+/Cyte-\d+\.\d+\.\d+-'),
+          '/releases/download/v${next.marketing}/Cyte-${next.marketing}-',
         )
         .replaceAll(
-          RegExp(r'Ayte-\d+\.\d+\.\d+-'),
-          'Ayte-${next.marketing}-',
+          RegExp(r'Cyte-\d+\.\d+\.\d+-'),
+          'Cyte-${next.marketing}-',
         );
     if (updated != before) readme.writeAsStringSync(updated);
   }

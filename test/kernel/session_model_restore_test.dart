@@ -13,12 +13,12 @@ void main() {
     'assistant model from transcript history instead of global fallback',
     () async {
       final prevCore = ClaudeCore.current;
-      ClaudeCore.current = () => ClaudeCore.antigravity;
+      ClaudeCore.current = () => ClaudeCore.codebuddy;
       addTearDown(() => ClaudeCore.current = prevCore);
 
       final session = SessionRecord(
-        id: 'sess-hydrogen-1',
-        title: 'Test Hydrogen Session',
+        id: 'sess-hunyuan-1',
+        title: 'Test Hunyuan Session',
         updatedAt: DateTime(2026, 11, 18),
         cwd: '/tmp/proj',
       );
@@ -29,9 +29,9 @@ void main() {
           cwd: '/tmp/proj',
           resume: session,
           settings: const {
-            'model': '@antigravity-cli/gemini-4-carbon',
-            'effort@@antigravity-cli/gemini-4-hydrogen': 'xhigh',
-            'context@@antigravity-cli/gemini-4-hydrogen': '512000',
+            'model': '@codebuddy-cli/glm-5.3',
+            'effort@@codebuddy-cli/hy4-preview': 'high',
+            'context@@codebuddy-cli/hy4-preview': '512000',
           },
         ),
         start: (_) async => FakeCli(),
@@ -39,23 +39,23 @@ void main() {
         readHistory: (_) async => const [
           {
             'type': 'assistant',
-            'uuid': 'agy-import-sess-hydrogen-1-a-1',
+            'uuid': 'cbc-asst-1-0',
             'message': {
               'role': 'assistant',
-              'model': 'gemini-3.8-flash-high',
+              'model': 'deepseek-v4-pro',
               'content': [
-                {'type': 'text', 'text': 'imported'},
+                {'type': 'text', 'text': 'earlier turn'},
               ],
             },
           },
           {
             'type': 'assistant',
-            'uuid': 'agy-asst-1-1',
+            'uuid': 'cbc-asst-1-1',
             'message': {
               'role': 'assistant',
-              'model': 'gemini-4-hydrogen',
+              'model': 'hy4-preview',
               'content': [
-                {'type': 'text', 'text': 'actual turn'},
+                {'type': 'text', 'text': 'latest turn'},
               ],
             },
           },
@@ -65,10 +65,10 @@ void main() {
 
       await pumpEventQueue();
       expect(kernel.loadingHistory, isFalse);
-      expect(kernel.model.selected, '@antigravity-cli/gemini-4-hydrogen');
-      expect(kernel.effort.selected, 'xhigh');
-      expect(kernel.contextSize.selected, '256000');
-      expect(kernel.contextWindow, 256000);
+      expect(kernel.model.selected, '@codebuddy-cli/hy4-preview');
+      expect(kernel.effort.selected, 'high');
+      expect(kernel.contextSize.selected, '512000');
+      expect(kernel.contextWindow, 512000);
     },
   );
 }

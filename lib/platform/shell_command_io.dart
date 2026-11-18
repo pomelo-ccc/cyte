@@ -85,7 +85,7 @@ bool _exists(String path) =>
 class MacShellCommand implements ShellCommandInstaller {
   MacShellCommand({
     this.target = '/usr/local/bin/code',
-    this.bundleId = 'dev.ayte.desktop',
+    this.bundleId = 'dev.cyte.desktop',
     ShellCommandRunner? run,
     Future<String?> Function()? searchPath,
     this.temporaryDirectory,

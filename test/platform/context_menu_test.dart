@@ -42,19 +42,19 @@ void main() {
     );
 
     test('on when pluginkit lists it with a +; off otherwise', () async {
-      listed = '     dev.ayte.desktop.FinderExtension(1.0.0)\n';
+      listed = '     dev.cyte.desktop.FinderExtension(1.0.0)\n';
       expect(await menu().status(), ContextMenuStatus.off);
-      listed = '-    dev.ayte.desktop.FinderExtension(1.0.0)\n';
+      listed = '-    dev.cyte.desktop.FinderExtension(1.0.0)\n';
       expect(await menu().status(), ContextMenuStatus.off);
       listed =
-          '     dev.ayte.desktop.FinderExtension(1.0.0)\n'
-          '+    dev.ayte.desktop.FinderExtension(1.0.0)\n';
+          '     dev.cyte.desktop.FinderExtension(1.0.0)\n'
+          '+    dev.cyte.desktop.FinderExtension(1.0.0)\n';
       expect(await menu().status(), ContextMenuStatus.on);
       expect(ran.last, [
         'pluginkit',
         '-m',
         '-i',
-        'dev.ayte.desktop.FinderExtension',
+        'dev.cyte.desktop.FinderExtension',
       ]);
     });
 
@@ -69,7 +69,7 @@ void main() {
             '-e',
             'use',
             '-i',
-            'dev.ayte.desktop.FinderExtension',
+            'dev.cyte.desktop.FinderExtension',
           ],
         ]);
         ran.clear();
@@ -80,7 +80,7 @@ void main() {
             '-e',
             'ignore',
             '-i',
-            'dev.ayte.desktop.FinderExtension',
+            'dev.cyte.desktop.FinderExtension',
           ],
         ]);
       },
@@ -143,12 +143,12 @@ void main() {
         'folder\'s and its background\'s the folder', () {
       final entries = menu().entries(labels);
       expect(entries.map((entry) => entry.key), [
-        r'Software\Classes\*\shell\Ayte',
-        r'Software\Classes\*\shell\AyteFastIde',
-        r'Software\Classes\Directory\shell\Ayte',
-        r'Software\Classes\Directory\shell\AyteFastIde',
-        r'Software\Classes\Directory\Background\shell\Ayte',
-        r'Software\Classes\Directory\Background\shell\AyteFastIde',
+        r'Software\Classes\*\shell\Cyte',
+        r'Software\Classes\*\shell\CyteFastIde',
+        r'Software\Classes\Directory\shell\Cyte',
+        r'Software\Classes\Directory\shell\CyteFastIde',
+        r'Software\Classes\Directory\Background\shell\Cyte',
+        r'Software\Classes\Directory\Background\shell\CyteFastIde',
       ]);
       expect(entries[0].label, 'Open with BaoCode');
       expect(entries[0].command, '"$exe" --baocode-agent "%1"');
@@ -173,7 +173,7 @@ void main() {
       final written = jsonDecode(environment['BAOCODE_MENU']!) as List;
       expect(written, hasLength(6));
       expect(written.first, {
-        'key': r'Software\Classes\*\shell\Ayte',
+        'key': r'Software\Classes\*\shell\Cyte',
         'label': 'Open with BaoCode',
         'command': '"$exe" --baocode-agent "%1"',
       });
@@ -184,7 +184,7 @@ void main() {
       await menu().uninstall();
       final removed =
           jsonDecode(environments.first!['BAOCODE_MENU']!) as List<Object?>;
-      expect(removed, contains(r'Software\Classes\Directory\shell\Ayte'));
+      expect(removed, contains(r'Software\Classes\Directory\shell\Cyte'));
       expect(removed, hasLength(6));
 
       where = '0 1';

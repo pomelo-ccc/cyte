@@ -13,9 +13,8 @@ import '../../ide/ide_menu.dart';
 import '../../icons/brand_logos.dart';
 import '../../icons/project_icon.dart';
 import '../../icons/project_icon_picker.dart';
-import '../../kernel/antigravity/antigravity_account_models.dart';
-import '../../kernel/antigravity/antigravity_accounts.dart';
-import '../../kernel/antigravity/antigravity_cli.dart';
+import '../../kernel/codebuddy/codebuddy_accounts.dart';
+import '../../kernel/codebuddy/codebuddy_cli.dart';
 import '../settings_dialog.dart' show SettingsOpener, SettingsSection;
 import '../../kernel/claude_code/claude_haiku.dart';
 import '../../l10n/l10n.dart';
@@ -233,7 +232,7 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
     listenable: Listenable.merge([
       _providers,
       _magpie,
-      AntigravityAccounts.instance,
+      CodeBuddyAccounts.instance,
     ]),
     builder: (context, _) {
       final open = _providers.provider(_open);
@@ -258,8 +257,8 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
   String _defaultName(BuildContext context, String? value) {
     final l10n = context.l10n;
     if (value == null) return l10n.modelsDefaultLast;
-    if (AntigravityModels.isAntigravityModel(value)) {
-      return 'Antigravity CLI · ${AntigravityModels.labelOf(value)}';
+    if (CodeBuddyModels.isCodeBuddyModel(value)) {
+      return 'CodeBuddy CLI · ${CodeBuddyModels.labelOf(value)}';
     }
     if (_providers.resolve(value) case (final provider, final model)) {
       return '${provider.name} · ${provider.labelOf(model)}';
@@ -399,22 +398,22 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
                       onSelected: () =>
                           unawaited(_providers.setDefaultModel('default')),
                     ),
-                  if (_providers.antigravityOffered)
+                  if (_providers.codebuddyOffered)
                     IdeMenuAction(
-                      'Antigravity CLI',
-                      checked: AntigravityModels.isAntigravityModel(current),
+                      'CodeBuddy CLI',
+                      checked: CodeBuddyModels.isCodeBuddyModel(current),
                       submenu: [
-                        for (final model in AntigravityModels.current)
+                        for (final model in CodeBuddyModels.current)
                           IdeMenuAction(
                             model.label,
                             checked:
-                                AntigravityModels.isAntigravityModel(current) &&
-                                AntigravityModels.bareModelId(current) ==
+                                CodeBuddyModels.isCodeBuddyModel(current) &&
+                                CodeBuddyModels.bareModelId(current) ==
                                     model.id,
                             onSelected: () => unawaited(
                               _providers.setDefaultModel(
                                 modelRef(
-                                  antigravityBuiltinProviderId,
+                                  codebuddyBuiltinProviderId,
                                   model.id,
                                 ),
                               ),
@@ -449,32 +448,33 @@ class _ModelsSettingsPageState extends State<ModelsSettingsPage> {
         SettingsGroup(
           title: l10n.modelsProviders,
           children: [
-            if (_providers.antigravityAvailable)
+            if (_providers.codebuddyAvailable)
               _ProviderRow(
                 icon: const ProviderIcon(
-                  antigravityBuiltinProviderId,
+                  codebuddyBuiltinProviderId,
                   size: 16,
                 ),
-                name: 'Antigravity CLI',
+                name: 'CodeBuddy CLI',
                 badge: l10n.modelsBuiltinBadge,
-                detail: switch (AntigravityAccounts.instance.currentAccount) {
+                detail: switch (CodeBuddyAccounts.instance.currentAccount) {
                   final acc? => [
-                    '当前账号：${acc.email}',
-                    if (acc.tier != AntigravityTier.unknown) acc.tier.badge,
-                    '共 ${AntigravityAccounts.instance.accounts.length} 个账号（点击管理）',
+                    '当前账号：${acc.displayName}',
+                    acc.region.shortBadge,
+                    acc.edition.label,
+                    '共 ${CodeBuddyAccounts.instance.accounts.length} 个账号（点击管理）',
                   ].join(' · '),
-                  null => '使用本机 Antigravity CLI (agy) 账号（点击管理多账号与配额）',
+                  null => '使用本机 CodeBuddy CLI 账号（点击管理多账号、国际版/国内版与积分）',
                 },
-                status: _providers.antigravityHidden
+                status: _providers.codebuddyHidden
                     ? _Status.off
                     : _Status.ready,
-                enabled: !_providers.antigravityHidden,
-                switchLabel: l10n.modelsEnableProvider('Antigravity CLI'),
+                enabled: !_providers.codebuddyHidden,
+                switchLabel: l10n.modelsEnableProvider('CodeBuddy CLI'),
                 onEnabled: (value) =>
-                    unawaited(_providers.setAntigravityHidden(!value)),
+                    unawaited(_providers.setCodeBuddyHidden(!value)),
                 onOpen: switch (SettingsOpener.maybeOf(context)) {
                   final open? =>
-                    () => open(SettingsSection.antigravityAccounts),
+                    () => open(SettingsSection.codebuddyAccounts),
                   null => null,
                 },
               ),

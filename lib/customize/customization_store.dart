@@ -7,17 +7,18 @@ import 'package:path/path.dart' as p;
 import 'customization_disk.dart';
 import 'customizations.dart';
 
-/// Antigravity (`agy`) customizations on a [CustomizationDisk]:
-/// - User global customizations under `~/.gemini/config` (`skills/`,
-///   `plugins/`, `AGENTS.md`, `GEMINI.md`, `rules/`, `mcp_config.json`,
-///   `hooks.json`, `agents/`, `commands/`).
-/// - Workspace project customizations under `<project>/.agents` (and
-///   `<project>/GEMINI.md`, `<project>/AGENTS.md`).
+/// CodeBuddy CLI (`codebuddy` / `cbc`) customizations on a [CustomizationDisk]:
+/// - User global customizations under `~/.codebuddy` (`skills/`, `agents/`,
+///   `commands/`, `rules/`, `CODEBUDDY.md`, `AGENTS.md`, `mcp.json`,
+///   `settings.json`, `plugins/`).
+/// - Workspace project customizations under `<project>/.codebuddy` (and
+///   `<project>/CODEBUDDY.md`, `<project>/CODEBUDDY.local.md`,
+///   `<project>/.mcp.json`).
 class CustomizationStore {
   CustomizationStore({this.configDir, this.homeDir, CustomizationDisk? disk})
     : _disk = disk ?? CustomizationDisk.local;
 
-  /// Antigravity's global config folder (`~/.gemini/config` by default).
+  /// CodeBuddy's global config folder (`~/.codebuddy` by default).
   final String? configDir;
 
   /// The user's home directory.
@@ -42,8 +43,6 @@ class CustomizationStore {
 
   Future<String> config() async => configDir ?? await _files.configDir();
 
-  Future<String?> _home() async => homeDir ?? await _files.homeDir();
-
   /// Those of [kind], the user's and [project]'s (none of a project's when
   /// null), by scope then name.
   Future<List<Customization>> list(
@@ -52,7 +51,9 @@ class CustomizationStore {
   }) async {
     if (!supported) return const [];
     final config = await this.config();
-    final dotAgents = project == null ? null : _paths.join(project, '.agents');
+    final dotCodeBuddy = project == null
+        ? null
+        : _paths.join(project, '.codebuddy');
     final items = switch (kind) {
       CustomizationKind.skills => [
         ...await _skills(
@@ -60,10 +61,10 @@ class CustomizationStore {
           _paths.join(config, 'skills'),
         ),
         ...await _pluginSkills(config),
-        if (dotAgents != null)
+        if (dotCodeBuddy != null)
           ...await _skills(
             CustomizationScope.project,
-            _paths.join(dotAgents, 'skills'),
+            _paths.join(dotCodeBuddy, 'skills'),
           ),
       ],
       CustomizationKind.subagents => [
@@ -72,11 +73,11 @@ class CustomizationStore {
           CustomizationScope.user,
           _paths.join(config, 'agents'),
         ),
-        if (dotAgents != null)
+        if (dotCodeBuddy != null)
           ...await _markdown(
             kind,
             CustomizationScope.project,
-            _paths.join(dotAgents, 'agents'),
+            _paths.join(dotCodeBuddy, 'agents'),
           ),
       ],
       CustomizationKind.commands => [
@@ -85,15 +86,15 @@ class CustomizationStore {
           CustomizationScope.user,
           _paths.join(config, 'commands'),
         ),
-        if (dotAgents != null)
+        if (dotCodeBuddy != null)
           ...await _markdown(
             kind,
             CustomizationScope.project,
-            _paths.join(dotAgents, 'commands'),
+            _paths.join(dotCodeBuddy, 'commands'),
           ),
       ],
       CustomizationKind.rules => await _rules(config, project),
-      CustomizationKind.memory => await _memories(project),
+      CustomizationKind.memory => await _memories(config, project),
       CustomizationKind.mcps => await _servers(config, project),
       CustomizationKind.hooks => await _hooks(config, project),
       CustomizationKind.plugins => await _plugins(config, project),
@@ -113,10 +114,18 @@ class CustomizationStore {
     if (!supported) return null;
     final colon = name.indexOf(':');
     if (colon > 0) {
-      return _pluginCommandFile(
+      final fromPlugin = await _pluginCommandFile(
         name.substring(0, colon),
         name.substring(colon + 1),
       );
+      if (fromPlugin != null) return fromPlugin;
+      for (final command in await list(
+        CustomizationKind.commands,
+        project: project,
+      )) {
+        if (command.name == '/$name') return command.path;
+      }
+      return null;
     }
     for (final skill in await list(
       CustomizationKind.skills,
@@ -138,10 +147,33 @@ class CustomizationStore {
 
   Future<String?> _pluginCommandFile(String plugin, String name) async {
     final config = await this.config();
-    final root = _paths.join(config, 'plugins', plugin);
+    final installed = await _json(
+      _paths.join(config, 'plugins', 'installed_plugins.json'),
+    );
+    if (installed?['plugins'] case final Map<String, Object?> plugins) {
+      for (final MapEntry(key: id, value: entry) in plugins.entries) {
+        final at = id.indexOf('@');
+        if ((at < 0 ? id : id.substring(0, at)) != plugin) continue;
+        final install = switch (entry) {
+          final List<Object?> installs =>
+            installs.whereType<Map<String, Object?>>().firstOrNull,
+          final Map<String, Object?> install => install,
+          _ => null,
+        };
+        if (install?['installPath'] case final String root) {
+          for (final path in [
+            _paths.join(root, 'skills', name, 'SKILL.md'),
+            _paths.join(root, 'commands', '$name.md'),
+          ]) {
+            if (await _files.read(path) != null) return path;
+          }
+        }
+      }
+    }
+    final directRoot = _paths.join(config, 'plugins', plugin);
     for (final path in [
-      _paths.join(root, 'skills', name, 'SKILL.md'),
-      _paths.join(root, 'commands', '$name.md'),
+      _paths.join(directRoot, 'skills', name, 'SKILL.md'),
+      _paths.join(directRoot, 'commands', '$name.md'),
     ]) {
       if (await _files.read(path) != null) return path;
     }
@@ -170,7 +202,7 @@ class CustomizationStore {
     }
     final base = scope == CustomizationScope.user
         ? await config()
-        : _paths.join(project!, '.agents');
+        : _paths.join(project!, '.codebuddy');
     final path = switch (kind) {
       CustomizationKind.skills => _paths.join(base, 'skills', name, 'SKILL.md'),
       CustomizationKind.subagents => _paths.join(base, 'agents', '$name.md'),
@@ -186,7 +218,7 @@ class CustomizationStore {
   }
 
   /// The file [kind] is kept in for [scope], to be edited whole:
-  /// `mcp_config.json` for MCPs, `hooks.json` for hooks.
+  /// `mcp.json` / `.mcp.json` for MCPs, `settings.json` for hooks.
   Future<String?> configFile(
     CustomizationKind kind,
     CustomizationScope scope, {
@@ -196,16 +228,15 @@ class CustomizationStore {
     final config = await this.config();
     if (kind == CustomizationKind.mcps) {
       return switch (scope) {
-        CustomizationScope.user => _paths.join(config, 'mcp_config.json'),
+        CustomizationScope.user => _paths.join(config, 'mcp.json'),
         CustomizationScope.project when project != null => _paths.join(
           project,
-          '.agents',
-          'mcp_config.json',
+          '.mcp.json',
         ),
         _ => null,
       };
     }
-    for (final (own, path) in _hooksFiles(config, project)) {
+    for (final (own, path) in _settingsFiles(config, project)) {
       if (own == scope) return path;
     }
     return null;
@@ -239,24 +270,52 @@ class CustomizationStore {
         child.path,
   ];
 
-  /// Each folder of [root] with a SKILL.md.
+  /// Each folder of [root] with a SKILL.md (including synced skill buckets).
   Future<List<Customization>> _skills(
     CustomizationScope scope,
     String root,
   ) async {
     final skills = <Customization>[];
     for (final folder in await _subfolders(root)) {
+      if (scope == CustomizationScope.user &&
+          _paths.basename(folder) == 'synced') {
+        for (final bucket in await _subfolders(folder)) {
+          skills.addAll(await _skills(CustomizationScope.synced, bucket));
+        }
+        continue;
+      }
       skills.addAll([?await _skill(scope, folder)]);
     }
     return skills;
   }
 
-  /// Skills bundled inside installed Antigravity plugins
-  /// (`~/.gemini/config/plugins/<plugin>/skills/<skill>/SKILL.md`).
   Future<List<Customization>> _pluginSkills(String config) async {
     final skills = <Customization>[];
+    final seenRoots = <String>{};
+    final installed = await _json(
+      _paths.join(config, 'plugins', 'installed_plugins.json'),
+    );
+    if (installed?['plugins'] case final Map<String, Object?> plugins) {
+      for (final entry in plugins.values) {
+        final install = switch (entry) {
+          final List<Object?> installs =>
+            installs.whereType<Map<String, Object?>>().firstOrNull,
+          final Map<String, Object?> install => install,
+          _ => null,
+        };
+        if (install?['installPath'] case final String root
+            when seenRoots.add(root)) {
+          for (final folder in await _subfolders(_paths.join(root, 'skills'))) {
+            skills.addAll([?await _skill(CustomizationScope.plugin, folder)]);
+          }
+        }
+      }
+    }
     for (final pluginDir in await _subfolders(_paths.join(config, 'plugins'))) {
-      for (final folder in await _subfolders(_paths.join(pluginDir, 'skills'))) {
+      if (!seenRoots.add(pluginDir)) continue;
+      for (final folder in await _subfolders(
+        _paths.join(pluginDir, 'skills'),
+      )) {
         skills.addAll([?await _skill(CustomizationScope.plugin, folder)]);
       }
     }
@@ -280,7 +339,8 @@ class CustomizationStore {
       );
     }
     final readOnly =
-        scope == CustomizationScope.synced || scope == CustomizationScope.plugin;
+        scope == CustomizationScope.synced ||
+        scope == CustomizationScope.plugin;
     return Customization(
       kind: CustomizationKind.skills,
       scope: scope,
@@ -314,7 +374,7 @@ class CustomizationStore {
               Customization(
                 kind: kind,
                 scope: scope,
-                name: _markdownName(kind, child.path, text),
+                name: _markdownName(kind, root, child.path, text),
                 description: describeMarkdown(text),
                 path: child.path,
                 editable: editable,
@@ -330,17 +390,26 @@ class CustomizationStore {
     return found;
   }
 
-  String _markdownName(CustomizationKind kind, String path, String text) {
-    final file = _paths.basenameWithoutExtension(path);
-    if (kind == CustomizationKind.commands) return '/$file';
+  String _markdownName(
+    CustomizationKind kind,
+    String root,
+    String path,
+    String text,
+  ) {
+    if (kind == CustomizationKind.commands) {
+      final rel = _paths.withoutExtension(_paths.relative(path, from: root));
+      final parts = _paths.split(rel);
+      return '/${parts.join(':')}';
+    }
     return switch (parseFrontMatter(text)['name']) {
       final name? when name.isNotEmpty => name,
-      _ => file,
+      _ => _paths.basenameWithoutExtension(path),
     };
   }
 
-  /// Rules Antigravity reads: `GEMINI.md`, `AGENTS.md`, `rules/*.md` globally
-  /// (`~/.gemini/config`), inside plugins, and in the workspace (`.agents/rules`).
+  /// Rules CodeBuddy reads: `CODEBUDDY.md`, `AGENTS.md`, `rules/*.md` globally
+  /// (`~/.codebuddy`) and in the workspace (`.codebuddy/rules`, `CODEBUDDY.md`,
+  /// `CODEBUDDY.local.md`).
   Future<List<Customization>> _rules(String config, String? project) async {
     Future<Customization?> ruleFile(
       CustomizationScope scope,
@@ -355,6 +424,7 @@ class CustomizationStore {
         name: _paths.relative(path, from: base),
         description: describeMarkdown(text),
         path: path,
+        removePath: path,
       );
     }
 
@@ -381,22 +451,10 @@ class CustomizationStore {
         ),
     ];
 
-    final pluginRules = <Customization>[];
-    for (final pluginDir in await _subfolders(_paths.join(config, 'plugins'))) {
-      pluginRules.addAll(
-        await folder(
-          CustomizationScope.plugin,
-          _paths.join(pluginDir, 'rules'),
-          _paths.join(config, 'plugins'),
-          editable: false,
-        ),
-      );
-    }
-
     return [
       ?await ruleFile(
         CustomizationScope.user,
-        _paths.join(config, 'GEMINI.md'),
+        _paths.join(config, 'CODEBUDDY.md'),
         config,
       ),
       ?await ruleFile(
@@ -409,11 +467,15 @@ class CustomizationStore {
         _paths.join(config, 'rules'),
         config,
       ),
-      ...pluginRules,
       if (project != null) ...[
         ?await ruleFile(
           CustomizationScope.project,
-          _paths.join(project, 'GEMINI.md'),
+          _paths.join(project, 'CODEBUDDY.md'),
+          project,
+        ),
+        ?await ruleFile(
+          CustomizationScope.project,
+          _paths.join(project, '.codebuddy', 'CODEBUDDY.md'),
           project,
         ),
         ?await ruleFile(
@@ -421,23 +483,25 @@ class CustomizationStore {
           _paths.join(project, 'AGENTS.md'),
           project,
         ),
+        ?await ruleFile(
+          CustomizationScope.local,
+          _paths.join(project, 'CODEBUDDY.local.md'),
+          project,
+        ),
         ...await folder(
           CustomizationScope.project,
-          _paths.join(project, '.agents', 'rules'),
+          _paths.join(project, '.codebuddy', 'rules'),
           project,
         ),
       ],
     ];
   }
 
-  /// Project memory files stored under `~/.ayte/projects/<project>/memory/`.
-  Future<List<Customization>> _memories(String? project) async {
+  /// Project memory files stored under `<config>/projects/<project>/memory/`.
+  Future<List<Customization>> _memories(String config, String? project) async {
     if (project == null) return const [];
-    final home = await _home();
-    if (home == null || home.isEmpty) return const [];
     final folder = _paths.join(
-      home,
-      '.ayte',
+      config,
       'projects',
       claudeProjectDirName(project),
       'memory',
@@ -457,9 +521,22 @@ class CustomizationStore {
     ];
   }
 
-  /// MCP servers configured in `~/.gemini/config/mcp_config.json`, inside
-  /// Antigravity plugins, or in `<project>/.agents/mcp_config.json` (and `.mcp.json`).
+  /// MCP servers configured in `~/.codebuddy/mcp.json`, inside plugins, or in
+  /// `<project>/.codebuddy/mcp.json` and `<project>/.mcp.json`.
   Future<List<Customization>> _servers(String config, String? project) async {
+    final disabledShared = <String>{};
+    if (project != null) {
+      for (final path in [
+        _paths.join(project, '.codebuddy', 'settings.json'),
+        _paths.join(project, '.codebuddy', 'settings.local.json'),
+      ]) {
+        if ((await _json(path))?['disabledMcpjsonServers']
+            case final List<Object?> list) {
+          disabledShared.addAll(list.whereType<String>());
+        }
+      }
+    }
+
     List<Customization> servers(
       CustomizationScope scope,
       Object? entries,
@@ -477,35 +554,19 @@ class CustomizationStore {
             editable: editable,
             detail: _pretty.convert({name: server}),
             server: server is Map<String, Object?> ? server : null,
-            enabled: server is Map<String, Object?> && server['disabled'] == true
+            enabled:
+                (server is Map<String, Object?> &&
+                        server['disabled'] == true) ||
+                    (scope == CustomizationScope.project &&
+                        disabledShared.contains(name))
                 ? false
                 : null,
           ),
     ];
 
-    final userMcp = _paths.join(config, 'mcp_config.json');
-    final pluginMcps = <Customization>[];
-    for (final pluginDir in await _subfolders(_paths.join(config, 'plugins'))) {
-      for (final candidate in [
-        _paths.join(pluginDir, 'mcp_config.json'),
-        _paths.join(pluginDir, 'mcp.json'),
-      ]) {
-        final json = await _json(candidate);
-        if (json != null) {
-          pluginMcps.addAll(
-            servers(
-              CustomizationScope.plugin,
-              json['mcpServers'] ?? json,
-              candidate,
-              editable: false,
-            ),
-          );
-        }
-      }
-    }
-
+    final userMcp = _paths.join(config, 'mcp.json');
     final projectFiles = [
-      if (project != null) _paths.join(project, '.agents', 'mcp_config.json'),
+      if (project != null) _paths.join(project, '.codebuddy', 'mcp.json'),
       if (project != null) _paths.join(project, '.mcp.json'),
     ];
     final projectMcps = <Customization>[];
@@ -530,7 +591,6 @@ class CustomizationStore {
         userMcp,
         editable: true,
       ),
-      ...pluginMcps,
       ...projectMcps,
     ];
   }
@@ -550,25 +610,25 @@ class CustomizationStore {
     ].join(' ');
   }
 
-  List<(CustomizationScope, String)> _hooksFiles(
+  List<(CustomizationScope, String)> _settingsFiles(
     String config,
     String? project,
   ) => [
-    (CustomizationScope.user, _paths.join(config, 'hooks.json')),
+    (CustomizationScope.user, _paths.join(config, 'settings.json')),
     if (project != null) ...[
       (
         CustomizationScope.project,
-        _paths.join(project, '.agents', 'hooks.json'),
+        _paths.join(project, '.codebuddy', 'settings.json'),
       ),
       (
         CustomizationScope.local,
-        _paths.join(project, '.agents', 'hooks.local.json'),
+        _paths.join(project, '.codebuddy', 'settings.local.json'),
       ),
     ],
   ];
 
   Future<List<Customization>> _hooks(String config, String? project) async => [
-    for (final (scope, path) in _hooksFiles(config, project))
+    for (final (scope, path) in _settingsFiles(config, project))
       if ((await _json(path))?['hooks'] case final Map<String, Object?> events)
         for (final MapEntry(key: event, value: groups) in events.entries)
           if (groups is List<Object?>)
@@ -592,49 +652,85 @@ class CustomizationStore {
                 ),
   ];
 
-  /// Installed Antigravity plugins under `~/.gemini/config/plugins/<name>/plugin.json`.
+  /// Installed CodeBuddy plugins (`plugins/installed_plugins.json` or direct
+  /// `plugins/<name>/plugin.json`).
   Future<List<Customization>> _plugins(String config, String? project) async {
-    final globalConfig = await _json(_paths.join(config, 'config.json'));
-    final disabledPlugins = <String>{
-      if (globalConfig?['disabledPlugins'] case final List<Object?> list)
-        ...list.whereType<String>(),
-    };
+    final enabled = <String, bool>{};
+    for (final (_, path) in _settingsFiles(config, project)) {
+      if ((await _json(path))?['enabledPlugins']
+          case final Map<String, Object?> map) {
+        for (final MapEntry(:key, :value) in map.entries) {
+          if (value is bool) enabled[key] = value;
+        }
+      }
+    }
+
     final result = <Customization>[];
-    for (final pluginDir in await _subfolders(_paths.join(config, 'plugins'))) {
-      final dirName = _paths.basename(pluginDir);
-      final manifestPath = _paths.join(pluginDir, 'plugin.json');
-      final manifest = await _json(manifestPath);
-      if (manifest == null) continue;
-      final name = switch (manifest['name']) {
-        final String s when s.trim().isNotEmpty => s.trim(),
-        _ => dirName,
-      };
-      final enabled = !disabledPlugins.contains(dirName) &&
-          !disabledPlugins.contains(name);
-      result.add(
-        Customization(
-          kind: CustomizationKind.plugins,
-          scope: CustomizationScope.plugin,
-          name: name,
-          description: switch (manifest['description']) {
-            final String description => description,
-            _ => switch (manifest['version']) {
-              final String version => 'v$version',
-              _ => dirName,
-            },
-          },
-          path: manifestPath,
-          editable: false,
-          detail: _pretty.convert({...manifest, 'enabled': enabled}),
-          enabled: enabled,
-        ),
-      );
+    final installed = await _json(
+      _paths.join(config, 'plugins', 'installed_plugins.json'),
+    );
+    if (installed?['plugins'] case final Map<String, Object?> plugins) {
+      for (final MapEntry(key: id, value: entry) in plugins.entries) {
+        final install = switch (entry) {
+          final List<Object?> installs =>
+            installs.whereType<Map<String, Object?>>().firstOrNull,
+          final Map<String, Object?> install => install,
+          _ => null,
+        };
+        if (install != null) {
+          result.add(await _plugin(id, install, enabled[id] ?? false));
+        }
+      }
     }
     return result;
   }
+
+  Future<Customization> _plugin(
+    String id,
+    Map<String, Object?> install,
+    bool enabled,
+  ) async {
+    final root = install['installPath'] as String?;
+    String? manifestPath;
+    Map<String, Object?>? manifest;
+    if (root != null) {
+      for (final candidate in [
+        _paths.join(root, '.codebuddy-plugin', 'plugin.json'),
+        _paths.join(root, '.claude-plugin', 'plugin.json'),
+        _paths.join(root, 'plugin.json'),
+      ]) {
+        final parsed = await _json(candidate);
+        if (parsed != null) {
+          manifestPath = candidate;
+          manifest = parsed;
+          break;
+        }
+      }
+      manifestPath ??= _paths.join(root, '.codebuddy-plugin', 'plugin.json');
+    }
+    final at = id.indexOf('@');
+    return Customization(
+      kind: CustomizationKind.plugins,
+      scope: CustomizationScope.plugin,
+      name: at < 0 ? id : id.substring(0, at),
+      description: switch (manifest?['description']) {
+        final String description => description,
+        _ => [
+          if (at >= 0) id.substring(at + 1),
+          if (install['version'] case final String version) version,
+        ].join(' · '),
+      },
+      path: manifestPath ?? root ?? id,
+      editable: false,
+      detail: _pretty.convert({
+        id: {...install, 'enabled': enabled},
+      }),
+      enabled: enabled,
+    );
+  }
 }
 
-/// Dashed directory name for [cwd] under `~/.ayte/projects/`.
+/// Dashed directory name for [cwd] under `~/.codebuddy/projects/`.
 String claudeProjectDirName(String cwd) {
   final dashed = cwd.replaceAll(RegExp('[^a-zA-Z0-9]'), '-');
   if (dashed.length <= 200) return dashed;

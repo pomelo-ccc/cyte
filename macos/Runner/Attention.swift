@@ -297,7 +297,7 @@ final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelega
     return image
   }
 
-  /// Draws the Ayte 'a' + spark tray icon (matching assets/branding/logo.svg)
+  /// Draws the Cyte 'c' arc + spark tray icon (matching assets/branding/logo.svg)
   /// into a square of [pixels] (18pt of them), from its top left.
   private static func drawTray(in context: CGContext, pixels: CGFloat, dot: Bool) {
     let unit = pixels / 18
@@ -305,6 +305,7 @@ final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelega
     context.translateBy(x: 0, y: pixels)
     context.scaleBy(x: 1, y: -1)
     context.setFillColor(NSColor.black.cgColor)
+    context.setStrokeColor(NSColor.black.cgColor)
 
     let pad = unit
     let span = 16 * unit
@@ -312,31 +313,23 @@ final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelega
     func v(_ y: CGFloat) -> CGFloat { pad + (y - 234) / 512 * span }
     func r(_ d: CGFloat) -> CGFloat { d / 512 * span }
 
-    // Ring of the 'a' glyph (even-odd cutout).
-    let ringCenter = CGPoint(x: u(466), y: v(538))
-    let outerR = r(198)
-    let innerR = r(108)
-    let ring = CGMutablePath()
-    ring.addEllipse(in: CGRect(
-      x: ringCenter.x - outerR, y: ringCenter.y - outerR,
-      width: outerR * 2, height: outerR * 2))
-    ring.addEllipse(in: CGRect(
-      x: ringCenter.x - innerR, y: ringCenter.y - innerR,
-      width: innerR * 2, height: innerR * 2))
-    context.addPath(ring)
-    context.fillPath(using: .evenOdd)
-
-    // Vertical rounded stem on the right of the ring.
-    let stemRect = CGRect(
-      x: u(580), y: v(340),
-      width: r(88), height: r(396))
-    let stemRadius = min(stemRect.width, stemRect.height) / 2
-    context.addPath(CGPath(
-      roundedRect: stemRect, cornerWidth: stemRadius, cornerHeight: stemRadius, transform: nil))
-    context.fillPath()
+    // Sculpted 'c' open arc with rounded caps.
+    let cCenter = CGPoint(x: u(486), y: v(516))
+    let midR = r(168)
+    let arc = CGMutablePath()
+    arc.addArc(
+      center: cCenter,
+      radius: midR,
+      startAngle: 0.72,
+      endAngle: CGFloat.pi * 2 - 0.72,
+      clockwise: false)
+    context.setLineWidth(r(92))
+    context.setLineCap(.round)
+    context.addPath(arc)
+    context.strokePath()
 
     // Top-right spark dot (expanded with cutout halo when [dot] signals attention).
-    let sparkCenter = CGPoint(x: u(704), y: v(282))
+    let sparkCenter = CGPoint(x: u(696), y: v(296))
     if dot {
       context.setBlendMode(.clear)
       context.fillEllipse(in: CGRect(
@@ -347,7 +340,7 @@ final class Attention: NSObject, UNUserNotificationCenterDelegate, NSSoundDelega
         x: sparkCenter.x - 2.4 * unit, y: sparkCenter.y - 2.4 * unit,
         width: 4.8 * unit, height: 4.8 * unit))
     } else {
-      let sparkR = r(44)
+      let sparkR = r(46)
       context.fillEllipse(in: CGRect(
         x: sparkCenter.x - sparkR, y: sparkCenter.y - sparkR,
         width: sparkR * 2, height: sparkR * 2))

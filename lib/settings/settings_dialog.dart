@@ -31,7 +31,7 @@ enum SettingsSection {
   general,
   appearance,
   models,
-  antigravityAccounts,
+  codebuddyAccounts,
   usage,
   network,
   ssh,
@@ -54,7 +54,7 @@ enum SettingsCategory {
     SettingsSection.general,
     SettingsSection.appearance,
     SettingsSection.models,
-    SettingsSection.antigravityAccounts,
+    SettingsSection.codebuddyAccounts,
     SettingsSection.usage,
     SettingsSection.network,
     SettingsSection.ssh,
@@ -259,7 +259,7 @@ class SettingsDialogState extends State<SettingsDialog> {
     SettingsSection.appearance => Codicons.symbolColor,
     SettingsSection.models =>
       ChannelSetup.channelBuild ? Codicons.person : Codicons.sparkle,
-    SettingsSection.antigravityAccounts => Codicons.account,
+    SettingsSection.codebuddyAccounts => Codicons.account,
     SettingsSection.usage => SvgIcons.usage,
     SettingsSection.network => Codicons.radioTower,
     SettingsSection.ssh => Codicons.remote,
@@ -294,8 +294,8 @@ class SettingsDialogState extends State<SettingsDialog> {
         ChannelSetup.channelBuild
             ? l10n.channelAccountTitle
             : l10n.settingsSectionModels,
-      SettingsSection.antigravityAccounts =>
-        isZh ? 'Antigravity 账号' : 'Antigravity Accounts',
+      SettingsSection.codebuddyAccounts =>
+        isZh ? 'CodeBuddy 账号' : 'CodeBuddy Accounts',
       SettingsSection.usage => l10n.settingsSectionUsage,
       SettingsSection.network => l10n.settingsSectionNetwork,
       SettingsSection.ssh => l10n.settingsSectionSsh,
@@ -323,8 +323,8 @@ class SettingsDialogState extends State<SettingsDialog> {
         SettingsSection.mobile => context.l10n.settingsMobileKeywords,
         SettingsSection.browser => context.l10n.settingsBrowserKeywords,
         SettingsSection.customize => context.l10n.settingsCustomizeKeywords,
-        SettingsSection.antigravityAccounts =>
-          'google antigravity account oauth quota 配额 切号 账号管理',
+        SettingsSection.codebuddyAccounts =>
+          'tencent codebuddy cbc account oauth quota 腾讯云 积分 切号 账号管理',
         SettingsSection.accounts => context.l10n.settingsAccountsKeywords,
         _ => '',
       };

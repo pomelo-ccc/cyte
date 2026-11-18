@@ -9,21 +9,14 @@ import '../../models/launch_environment.dart';
 import '../../network/network_proxy_io.dart';
 import '../../network/tls.dart';
 import '../../usage/usage_ledger.dart';
-import '../antigravity/antigravity_cli.dart';
+import '../codebuddy/codebuddy_accounts.dart';
+import '../codebuddy/codebuddy_cli.dart';
 import 'claude_core_setting.dart';
 import 'claude_environment.dart';
 import 'claude_haiku.dart';
 
-/// `claude -p --model haiku`: the prompt on stdin, one JSON result on
-/// stdout. No tools, MCP servers or slash commands, and no session kept;
-/// run outside the project so that its CLAUDE.md is not read.
-///
-/// On a provider: [model] of it, [env] its environment, given as flag
-/// settings in a file (it holds the key), as a session's are. [images] go
-/// with the prompt, as a stream-json message, whose answer streams.
-///
-/// Claude's own (no [env]: not through the proxy) is kept here, as the
-/// proxy keeps a provider's: under [session].
+/// Lightweight one-shot query via `codebuddy -p --no-session-persistence` (e.g.
+/// for `总结新标题` auto-titling and auxiliary summaries) or Cyte's built-in core.
 Future<String> askClaudeHaiku(
   String system,
   String prompt, {
@@ -55,7 +48,6 @@ Future<String> askClaudeHaiku(
     final clock = Stopwatch()..start();
     final (stderr, code) = await _run(
       system,
-      // One line.
       '${claudeHaikuMessage(prompt, images)}\n',
       cancel: cancel,
       model: model,
@@ -87,7 +79,6 @@ Future<String> askClaudeHaiku(
   return claudeHaikuAnswer(stdout.toString(), stderr, code);
 }
 
-/// As [askClaudeHaiku], its answer streamed and timed.
 Future<ClaudeTimedAnswer> timeClaudeAnswer(
   String system,
   String prompt, {
@@ -110,8 +101,6 @@ Future<ClaudeTimedAnswer> timeClaudeAnswer(
   return timer.answer(stderr, code);
 }
 
-/// Runs Claude Code, giving each line it prints to [onLine]: what it
-/// wrote to stderr and exited with.
 Future<(String, int)> _run(
   String system,
   String prompt, {
@@ -138,12 +127,19 @@ Future<(String, int)> _run(
       onStart: onStart,
     );
   }
-  final cli = await LocalAntigravity.locate();
+  await CodeBuddyAccounts.instance.ensureInitialized();
+  var activeAccount = CodeBuddyAccounts.instance.currentAccount;
+  if (activeAccount != null) {
+    activeAccount = await CodeBuddyAccounts.instance.ensureFreshAccount(
+      activeAccount,
+    );
+  }
+  final cli = await LocalCodeBuddy.locate();
   final proxy = await NetworkProxy.instance.environment();
   final certificates = await nodeCertificatesEnvironment(cli.environment);
+
   var effectivePrompt = prompt;
   if (message) {
-    // Extract plain text blocks when called via claudeHaikuMessage JSON.
     try {
       if (jsonDecode(prompt.trim()) case {
         'message': {'content': final List content},
@@ -158,34 +154,41 @@ Future<(String, int)> _run(
       // Keep prompt as-is.
     }
   }
-  final combinedPrompt = system.trim().isEmpty
-      ? effectivePrompt
-      : 'System instruction: $system\n\n$effectivePrompt';
-  final parsed = AntigravityModels.parseVariant(
-    model ?? 'gemini-3.8-flash-low',
-  );
+
   final cliModel =
-      parsed?.model.effectiveCliModel ??
-      AntigravityModels.cliModelIdOf(model ?? 'gemini-3.8-flash');
-  final cliEffort =
-      parsed?.effort ??
-      (parsed?.model.effortLevels.contains('low') == true ? 'low' : null);
+      model != null && model.trim().isNotEmpty && model != 'haiku'
+          ? CodeBuddyModels.cliModelIdOf(model)
+          : CodeBuddyModels.fastAuxiliaryModel;
+
   final childEnv = <String, String>{
     ...cli.environment,
     ...proxy,
     ...certificates,
+    ...?activeAccount?.processEnvironment(),
   };
+
   final Process process;
   try {
     process = await Process.start(
       cli.executable,
       [
-        '--disable-slash-commands',
-        '--dangerously-skip-permissions',
-        '--output-format=json',
-        '--model=$cliModel',
-        if (cliEffort != null) '--effort=$cliEffort',
-        '--print=$combinedPrompt',
+        '-p',
+        '-y',
+        '--no-session-persistence',
+        '--output-format',
+        stream ? 'stream-json' : 'json',
+        if (stream) ...['--verbose', '--include-partial-messages'],
+        '--model',
+        cliModel,
+        if (system.trim().isNotEmpty) ...['--system-prompt', system],
+        if (tools?.tools case final allowedTools?) ...[
+          '--tools',
+          allowedTools.join(','),
+        ] else ...[
+          '--tools',
+          '',
+        ],
+        effectivePrompt,
       ],
       workingDirectory: switch (tools?.directory) {
         final directory? when Directory(directory).existsSync() => directory,
@@ -193,10 +196,12 @@ Future<(String, int)> _run(
       },
       environment: childEnv,
       includeParentEnvironment: Platform.isWindows,
+      runInShell: cli.throughShell,
     );
   } on ProcessException catch (error) {
-    throw ClaudeHaikuException('Antigravity CLI could not start: ${error.message}');
+    throw ClaudeHaikuException('CodeBuddy CLI could not start: ${error.message}');
   }
+
   onStart?.call();
   unawaited(process.stdin.close().catchError((Object _) {}));
   var cancelled = false;
@@ -206,11 +211,10 @@ Future<(String, int)> _run(
       process.kill();
     }),
   );
-  final stdoutLines = <String>[];
   final stdout = process.stdout
       .transform(const Utf8Decoder(allowMalformed: true))
       .transform(const LineSplitter())
-      .forEach(stdoutLines.add);
+      .forEach(onLine);
   final stderr = process.stderr
       .transform(const Utf8Decoder(allowMalformed: true))
       .join();
@@ -218,96 +222,14 @@ Future<(String, int)> _run(
     Duration(minutes: tools == null ? 2 : 5),
     onTimeout: () {
       process.kill(ProcessSignal.sigkill);
-      throw const ClaudeHaikuException('Antigravity CLI took too long to answer.');
+      throw const ClaudeHaikuException('CodeBuddy CLI took too long to answer.');
     },
   );
   if (cancelled) throw const ClaudeHaikuCancelled();
   await stdout;
-
-  bool emitDecoded(Object? decoded) {
-    if (decoded is! Map) return false;
-    if (decoded['conversation_id'] case final String convId
-        when convId.isNotEmpty) {
-      _cleanupEphemeralAgyConversation(convId, childEnv);
-    }
-    if (decoded['response'] case final String response) {
-      onLine(
-        jsonEncode({
-          'type': 'result',
-          'subtype': 'success',
-          'is_error': decoded['status'] == 'ERROR',
-          'result': response,
-          if (decoded['usage'] is Map) 'usage': decoded['usage'],
-        }),
-      );
-      return true;
-    }
-    return false;
-  }
-
-  var matched = false;
-  for (final raw in stdoutLines) {
-    final trimmed = raw.trim();
-    if (!trimmed.startsWith('{')) continue;
-    try {
-      if (emitDecoded(jsonDecode(trimmed))) {
-        matched = true;
-      } else {
-        onLine(trimmed);
-      }
-    } on FormatException {
-      // May be multi-line JSON; handled below.
-    }
-  }
-  if (!matched && stdoutLines.isNotEmpty) {
-    final joined = stdoutLines.join('\n').trim();
-    final braceStart = joined.indexOf('{');
-    if (braceStart >= 0) {
-      try {
-        matched = emitDecoded(jsonDecode(joined.substring(braceStart)));
-      } on FormatException {
-        // Leave raw lines below.
-      }
-    }
-    if (!matched) {
-      for (final raw in stdoutLines) {
-        onLine(raw);
-      }
-    }
-  }
   return (await stderr, code);
 }
 
-void _cleanupEphemeralAgyConversation(
-  String convId,
-  Map<String, String> env,
-) {
-  // Guard against any path traversal characters.
-  if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(convId)) return;
-  final home =
-      env['HOME'] ??
-      env['USERPROFILE'] ??
-      Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      '';
-  if (home.isEmpty) return;
-  final root = '$home/.gemini/antigravity-cli';
-  for (final ext in const ['.db', '.db-wal', '.db-shm', '.pb']) {
-    unawaited(
-      File('$root/conversations/$convId$ext').delete().catchError((Object _) => File('')),
-    );
-  }
-  unawaited(
-    Directory('$root/brain/$convId')
-        .delete(recursive: true)
-        .catchError((Object _) => Directory('')),
-  );
-}
-
-/// [_run] on BaoCode's own core: one turn of an engine in an isolate of its
-/// own, set up as [claudeHaikuArguments] sets up the CLI, its messages
-/// given to [onLine] as the CLI prints them (only its result, unless
-/// [stream] or [message]).
 Future<(String, int)> _runBuiltin(
   String system,
   String prompt, {
@@ -330,13 +252,11 @@ Future<(String, int)> _runBuiltin(
   }
   environment.addAll(ClaudeEnvironment.stateDirectory(base));
   final options = EngineOptions(
-    // Elsewhere than a project, unless it is to look at one.
     cwd: switch (tools?.directory) {
       final directory? when Directory(directory).existsSync() => directory,
       _ => Directory.systemTemp.resolveSymbolicLinksSync(),
     },
     model: model ?? 'haiku',
-    // Nothing asked: what is not allowed is refused.
     permissionMode: 'dontAsk',
     persist: false,
     flagSettings: {
@@ -391,7 +311,7 @@ Future<(String, int)> _runBuiltin(
     final code = await ended.future.timeout(
       Duration(minutes: tools == null ? 2 : 5),
       onTimeout: () => throw const ClaudeHaikuException(
-        'Claude Code took too long to answer.',
+        'Built-in core took too long to answer.',
       ),
     );
     if (cancelled) throw const ClaudeHaikuCancelled();

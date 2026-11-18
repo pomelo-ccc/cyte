@@ -318,11 +318,11 @@ Future<void> showMemoryCapsuleDialog(
   final root = projectRoot ?? FileOpenScope.find(context)?.root;
   final home = Platform.environment['HOME'] ?? '';
   final projectClaudeMd = root != null && root.isNotEmpty
-      ? p.join(root, 'AGENTS.md')
+      ? p.join(root, 'CODEBUDDY.md')
       : null;
   final globalClaudeMd = home.isNotEmpty
-      ? p.join(home, '.gemini', 'config', 'AGENTS.md')
-      : 'AGENTS.md';
+      ? p.join(home, '.codebuddy', 'CODEBUDDY.md')
+      : 'CODEBUDDY.md';
 
   await showDialog<void>(
     context: context,
@@ -399,7 +399,7 @@ class _MemoryCapsuleDialogState extends State<_MemoryCapsuleDialog> {
     try {
       const system =
           'You distill an AI coding assistant reply into 1 to 3 concise, '
-          'reusable project memory rules for AGENTS.md. Write in the same '
+          'reusable project memory rules for CODEBUDDY.md. Write in the same '
           'language as the reply (Chinese if Chinese). Output ONLY Markdown '
           'bullet points starting with "- ", with no preamble or fences.';
       final prompt = [
@@ -447,7 +447,7 @@ class _MemoryCapsuleDialogState extends State<_MemoryCapsuleDialog> {
     try {
       final file = File(path);
       await file.parent.create(recursive: true);
-      const sectionHeader = '## 🧠 Ayte 项目记忆与规范';
+      const sectionHeader = '## 🧠 Cyte 项目记忆与规范';
       final dateStr = DateTime.now().toIso8601String().substring(0, 10);
       final entry = '\n<!-- $dateStr -->\n$rule\n';
       if (await file.exists()) {
@@ -460,7 +460,7 @@ class _MemoryCapsuleDialogState extends State<_MemoryCapsuleDialog> {
           );
         }
       } else {
-        await file.writeAsString('# AGENTS.md\n\n$sectionHeader\n$entry');
+        await file.writeAsString('# CODEBUDDY.md\n\n$sectionHeader\n$entry');
       }
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -658,7 +658,7 @@ class _ExportTurnButtonState extends State<ExportTurnButton> {
     if (fullSession || HardwareKeyboard.instance.isShiftPressed) {
       savedPath = await MarkdownExporter.saveToDownloads(
         md,
-        prefix: fullSession ? 'Ayte-会话复盘' : 'Ayte-单轮问答',
+        prefix: fullSession ? 'Cyte-会话复盘' : 'Cyte-单轮问答',
       );
     }
     if (!mounted) return;
@@ -729,7 +729,7 @@ abstract final class MarkdownExporter {
       buf.writeln();
     }
     if (s.answerText != null && s.answerText!.trim().isNotEmpty) {
-      buf.writeln('## 🤖 Ayte 回答');
+      buf.writeln('## 🤖 Cyte 回答');
       buf.writeln();
       buf.writeln(s.answerText!.trim());
       buf.writeln();
@@ -749,7 +749,7 @@ abstract final class MarkdownExporter {
   static String formatFullSession(ChatFeed feed) {
     final buf = StringBuffer();
     final now = DateTime.now().toIso8601String().substring(0, 19).replaceAll('T', ' ');
-    buf.writeln('# 🦅 Ayte 会话复盘笔记');
+    buf.writeln('# 🦅 Cyte 会话复盘笔记');
     buf.writeln();
     buf.writeln('- **导出时间**：`$now`');
     if (feed is ChatSession && feed.root != null) {

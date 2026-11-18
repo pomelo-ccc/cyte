@@ -14,7 +14,7 @@ class BaoWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Ayte',
+      label: 'Cyte',
       child: CustomPaint(
         size: _WordmarkPainter.sizeFor(cell),
         painter: _WordmarkPainter(color: color, cell: cell),
@@ -29,25 +29,25 @@ class _WordmarkPainter extends CustomPainter {
   final Color color;
   final double cell;
 
-  /// The mark: Ayte's 4 ascending levitation wave bars, a dot to its cells.
+  /// The mark: Cyte's sculpted `c` arc with a floating spark orb, a dot to its cells.
   static const _mark = [
-    '....#..',
-    '....#.#',
-    '..#.#.#',
-    '#.#.#.#',
-    '#.#.#.#',
-    '..#.#.#',
+    '..###.#',
+    '.#.....',
+    '#......',
+    '#......',
+    '.#.....',
+    '..####.',
   ];
 
   /// 5 × 5 capitals, sitting on the mark's bottom row; set wide, a small
   /// label rather than a title.
   static const _glyphs = {
-    'A': ['.###.', '#...#', '#####', '#...#', '#...#'],
+    'C': ['.####', '#....', '#....', '#....', '.####'],
     'Y': ['#...#', '.#.#.', '..#..', '..#..', '..#..'],
     'T': ['#####', '..#..', '..#..', '..#..', '..#..'],
     'E': ['#####', '#....', '####.', '#....', '#####'],
   };
-  static const _word = 'AYTE';
+  static const _word = 'CYTE';
   static const _glyphW = 5, _glyphH = 5, _tracking = 2;
 
   /// Between the mark and the name.

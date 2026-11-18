@@ -52,7 +52,7 @@ import 'package:baocode/update/version.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
 /// Where the downloads go on GitHub Releases: `<base>/v<version>/<file>`.
-const _releasesBase = 'https://github.com/pomelo-ccc/ayte/releases/download';
+const _releasesBase = 'https://github.com/pomelo-ccc/cyte/releases/download';
 
 /// [name]'s link on the version's GitHub Release.
 Uri _link(AppVersion version, String name, String sha256) =>

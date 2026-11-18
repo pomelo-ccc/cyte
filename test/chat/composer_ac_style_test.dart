@@ -1,5 +1,5 @@
 import 'package:baocode/chat/chat_session.dart';
-import 'package:baocode/chat/composer/antigravity_account_picker.dart';
+import 'package:baocode/chat/composer/codebuddy_account_picker.dart';
 import 'package:baocode/chat/composer/composer.dart';
 import 'package:baocode/chat/composer/composer_picker.dart';
 import 'package:baocode/chat/composer/pickers_row.dart';
@@ -71,7 +71,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(PickersRow),
-          matching: find.byType(AntigravityAccountPicker),
+          matching: find.byType(CodeBuddyAccountPicker),
         ),
         findsNothing,
       );

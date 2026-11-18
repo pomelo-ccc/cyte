@@ -164,20 +164,29 @@ class Canvas {
     }
   }
 
-  // A vertical rounded capsule centered at |cx| between |y0| and |y1| with
-  // |radius|, smoothed with 4×4 MSAA like Disc.
-  void Capsule(double cx, double y0, double y1, double radius, uint32_t rgb) {
+  // A rounded open 'c' arc centered at (|cx|, |cy|) with radius |mid_r|,
+  // half-stroke |half_thick|, and right-side half-opening |gap_rad|.
+  void CArc(double cx, double cy, double mid_r, double half_thick,
+            double gap_rad, uint32_t rgb) {
     constexpr int kSamples = 4;
+    const double cap_x = mid_r * std::cos(gap_rad);
+    const double cap_y = mid_r * std::sin(gap_rad);
     for (int y = 0; y < size_; y++) {
       for (int x = 0; x < size_; x++) {
         int inside = 0;
         for (int sy = 0; sy < kSamples; sy++) {
           for (int sx = 0; sx < kSamples; sx++) {
             const double px = x + (sx + 0.5) / kSamples - cx;
-            const double py = y + (sy + 0.5) / kSamples;
-            const double cy = (std::max)(y0, (std::min)(y1, py));
-            const double dy = py - cy;
-            if (px * px + dy * dy <= radius * radius) {
+            const double py = y + (sy + 0.5) / kSamples - cy;
+            const double theta = std::atan2(py, px);
+            double dist = 0.0;
+            if (std::abs(theta) <= gap_rad) {
+              const double target_y = py >= 0.0 ? cap_y : -cap_y;
+              dist = std::hypot(px - cap_x, py - target_y);
+            } else {
+              dist = std::abs(std::hypot(px, py) - mid_r);
+            }
+            if (dist <= half_thick) {
               inside++;
             }
           }
@@ -548,19 +557,17 @@ HICON Attention::TrayIcon(bool dot) const {
   auto v = [&](double y) { return pad + (y - 234.0) / 512.0 * span; };
   auto r = [&](double d) { return d / 512.0 * span; };
 
-  // Ayte 'a' ring + vertical rounded stem + top-right spark dot.
-  canvas.Disc(u(466.0), v(538.0), r(198.0), ink, false);
-  canvas.Disc(u(466.0), v(538.0), r(108.0), 0, true);
-  canvas.Capsule(u(624.0), v(384.0), v(692.0), r(44.0), ink);
+  // Cyte 'c' arc + top-right spark dot.
+  canvas.CArc(u(486.0), v(516.0), r(168.0), r(46.0), 0.72, ink);
 
   if (dot) {
     const double radius = size * 0.17;
-    const double cx = u(704.0);
-    const double cy = v(282.0);
+    const double cx = u(696.0);
+    const double cy = v(296.0);
     canvas.Disc(cx, cy, radius + (std::max)(1.0, size / 16.0), 0, true);
     canvas.Disc(cx, cy, radius, kBadgeRed, false);
   } else {
-    canvas.Disc(u(704.0), v(282.0), r(44.0), 0xF59E0B, false);
+    canvas.Disc(u(696.0), v(296.0), r(46.0), 0x10B981, false);
   }
   return canvas.Icon();
 }
@@ -575,7 +582,7 @@ void Attention::ShowIcon() {
   data.uCallbackMessage = kTrayMessage;
   data.hIcon = icon;
   const std::wstring tooltip =
-      tray_ && !tray_->tooltip.empty() ? tray_->tooltip : L"Ayte";
+      tray_ && !tray_->tooltip.empty() ? tray_->tooltip : L"Cyte";
   wcsncpy_s(data.szTip, tooltip.c_str(), _TRUNCATE);
   bool shown = icon_added_ && ::Shell_NotifyIconW(NIM_MODIFY, &data);
   if (!shown) {

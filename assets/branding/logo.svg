@@ -1,27 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="256 232 498 516" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="256 232 498 524" fill="none">
   <defs>
-    <linearGradient id="ayteRing" x1="290" y1="344" x2="640" y2="724" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38BDF8" />
-      <stop offset="55%" stop-color="#6366F1" />
-      <stop offset="100%" stop-color="#EC4899" />
+    <linearGradient id="cyteArc" x1="290" y1="330" x2="630" y2="730" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="45%" stop-color="#0EA5E9" />
+      <stop offset="78%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#10B981" />
     </linearGradient>
-    <linearGradient id="ayteStem" x1="622" y1="340" x2="622" y2="736" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FB7185" />
-      <stop offset="55%" stop-color="#A855F7" />
-      <stop offset="100%" stop-color="#6366F1" />
-    </linearGradient>
-    <radialGradient id="ayteDot" cx="692" cy="270" r="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FEF08A" />
-      <stop offset="55%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#D97706" />
+    <radialGradient id="cyteOrb" cx="684" cy="274" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ECFCCB" />
+      <stop offset="45%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
     </radialGradient>
   </defs>
-  <path
-    fill-rule="evenodd"
-    clip-rule="evenodd"
-    d="M466 340C575.352 340 664 428.648 664 538C664 647.352 575.352 736 466 736C356.648 736 268 647.352 268 538C268 428.648 356.648 340 466 340ZM466 424C403.04 424 352 475.04 352 538C352 600.96 403.04 652 466 652C528.96 652 580 600.96 580 538C580 475.04 528.96 424 466 424Z"
-    fill="url(#ayteRing)"
-  />
-  <rect x="580" y="340" width="84" height="396" rx="42" fill="url(#ayteStem)" />
-  <circle cx="704" cy="282" r="38" fill="url(#ayteDot)" />
+  <path d="M 637.38 392.21 A 212.00 212.00 0 1 0 637.38 671.79 A 46.00 46.00 0 0 1 568.22 611.13 A 120.00 120.00 0 1 1 568.22 452.87 A 46.00 46.00 0 0 1 637.38 392.21 Z" fill="url(#cyteArc)" />
+  <circle cx="696" cy="286" r="42" fill="url(#cyteOrb)" />
 </svg>

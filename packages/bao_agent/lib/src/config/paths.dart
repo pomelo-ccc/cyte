@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
-/// Where things are kept: Claude Code's own places, so that what one
-/// writes the other reads (sessions, plans, settings, memory).
+/// Where CodeBuddy CLI (`codebuddy` / `cbc`) keeps sessions, plans, settings,
+/// MCP configuration, and memory (`~/.codebuddy` unless overridden by
+/// `CODEBUDDY_CONFIG_DIR` or `CYTE_SESSION_DATA_PATH`).
 class AgentPaths {
   AgentPaths({
     required this.home,
@@ -13,7 +14,8 @@ class AgentPaths {
   }) : tempDir =
            tempDir ?? (Platform.isWindows ? Directory.systemTemp.path : '/tmp');
 
-  /// From [environment]: `AYTE_SESSION_DATA_PATH`, else `~/.ayte`.
+  /// From [environment]: `CODEBUDDY_CONFIG_DIR`, `CYTE_SESSION_DATA_PATH`,
+  /// else `~/.codebuddy`.
   factory AgentPaths.from(
     Map<String, String> environment, {
     String? configDir,
@@ -23,13 +25,13 @@ class AgentPaths {
     final config =
         configDir ??
         [
-          environment['AYTE_SESSION_DATA_PATH'],
+          environment['CODEBUDDY_CONFIG_DIR'],
+          environment['CYTE_SESSION_DATA_PATH'],
         ].whereType<String>().where((dir) => dir.isNotEmpty).firstOrNull ??
-        p.join(home, '.ayte');
+        p.join(home, '.codebuddy');
     return AgentPaths(home: home, configDir: config, tempDir: tempDir);
   }
 
-  /// The user's home directory as [environment] says.
   static String homeOf(Map<String, String> environment) {
     for (final name
         in Platform.isWindows
@@ -41,20 +43,16 @@ class AgentPaths {
   }
 
   final String home;
-
-  /// `~/.claude`, unless moved.
   final String configDir;
-
-  /// Where tasks' output goes.
   final String tempDir;
   final String? _uid;
 
-  /// `~/.ayte/mcp_config.json`: the user's MCP servers and per-project state.
-  String get claudeJson => p.join(configDir, 'mcp_config.json');
+  /// `~/.codebuddy/mcp.json`: the user's MCP servers.
+  String get claudeJson => p.join(configDir, 'mcp.json');
 
   String get userSettings => p.join(configDir, 'settings.json');
 
-  String get userMemory => p.join(home, '.gemini', 'config', 'AGENTS.md');
+  String get userMemory => p.join(configDir, 'CODEBUDDY.md');
 
   String get projectsDir => p.join(configDir, 'projects');
 
@@ -65,14 +63,11 @@ class AgentPaths {
   String fileHistoryDir(String sessionId) =>
       p.join(configDir, 'file-history', sessionId);
 
-  /// The folder [cwd]'s sessions are kept in: its path with every character
-  /// but letters and digits made a dash, as Claude Code names it.
   String projectDir(String cwd) => p.join(projectsDir, projectDirName(cwd));
 
   static String projectDirName(String cwd) {
     final dashed = cwd.replaceAll(RegExp('[^a-zA-Z0-9]'), '-');
     if (dashed.length <= 200) return dashed;
-    // Long paths: cut, with a hash of the whole to tell them apart.
     var hash = 0;
     for (final unit in cwd.codeUnits) {
       hash = (hash * 31 + unit) & 0x7fffffff;
@@ -83,8 +78,6 @@ class AgentPaths {
   String sessionFile(String cwd, String sessionId) =>
       p.join(projectDir(cwd), '$sessionId.jsonl');
 
-  /// The session [sessionId]'s file, wherever its project is; null when
-  /// there is none.
   String? findSession(String sessionId) {
     final projects = Directory(projectsDir);
     if (!projects.existsSync()) return null;
@@ -95,10 +88,9 @@ class AgentPaths {
     return null;
   }
 
-  /// Where the tasks of [sessionId], run in [cwd], write what they print.
   String tasksDir(String cwd, String sessionId) => p.join(
     tempDir,
-    Platform.isWindows ? 'ayte' : 'ayte-${uid()}',
+    Platform.isWindows ? 'cyte' : 'cyte-${uid()}',
     projectDirName(cwd),
     sessionId,
     'tasks',
@@ -106,7 +98,6 @@ class AgentPaths {
 
   String? _resolvedUid;
 
-  /// The user's numeric id, as the task folders are named.
   String uid() {
     if (_uid != null) return _uid;
     if (_resolvedUid != null) return _resolvedUid!;
@@ -120,14 +111,12 @@ class AgentPaths {
     return _resolvedUid!;
   }
 
-  /// Where the organisation's settings and memory are, if it set any.
   static String get managedDir {
-    if (Platform.isMacOS) return '/Library/Application Support/Ayte';
-    if (Platform.isWindows) return r'C:\Program Files\Ayte';
-    return '/etc/ayte';
+    if (Platform.isMacOS) return '/Library/Application Support/Cyte';
+    if (Platform.isWindows) return r'C:\Program Files\Cyte';
+    return '/etc/cyte';
   }
 
-  /// `~` spelled out.
   String expandHome(String path) {
     if (path == '~') return home;
     if (path.startsWith('~/') || path.startsWith(r'~\')) {

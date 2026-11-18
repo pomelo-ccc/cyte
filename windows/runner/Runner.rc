@@ -94,13 +94,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Ayte" "\0"
-            VALUE "FileDescription", "Ayte" "\0"
+            VALUE "CompanyName", "Cyte" "\0"
+            VALUE "FileDescription", "Cyte" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "kestrel" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Ayte. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Cyte. All rights reserved." "\0"
             VALUE "OriginalFilename", "baocode.exe" "\0"
-            VALUE "ProductName", "Ayte" "\0"
+            VALUE "ProductName", "Cyte" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

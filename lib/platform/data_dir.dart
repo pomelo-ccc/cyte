@@ -56,7 +56,7 @@ class DataDirectory {
   /// user's data.
   static DataDirectory get current => _current ??= DataDirectory(
     Platform.environment.containsKey('FLUTTER_TEST')
-        ? p.join(Directory.systemTemp.path, 'ayte-test-data-$pid')
+        ? p.join(Directory.systemTemp.path, 'cyte-test-data-$pid')
         : defaultPath(Platform.environment),
   );
   static set current(DataDirectory value) => _current = value;
@@ -166,14 +166,14 @@ class DataDirectory {
   /// Entries that show a folder holds the app's data.
   static const markers = ['User', 'state', 'argv.json'];
 
-  /// The platform's place for it: `%APPDATA%\ayte` on Windows,
-  /// `~/Library/Application Support/ayte` on macOS, `~/.config/ayte`
+  /// The platform's place for it: `%APPDATA%\cyte` on Windows,
+  /// `~/Library/Application Support/cyte` on macOS, `~/.config/cyte`
   /// elsewhere.
   static String defaultPath(Map<String, String> environment) =>
       AppPaths.dataDir(environment);
 
   /// The environment variable that overrides everything else.
-  static const environmentVariable = 'AYTE_DATA_DIR';
+  static const environmentVariable = 'CYTE_DATA_DIR';
 
   @override
   bool operator ==(Object other) =>
@@ -186,7 +186,7 @@ class DataDirectory {
   String toString() => 'DataDirectory($path, ${source.name})';
 }
 
-/// `~/.baocode/config-dir.json`: the folder the user moved the data to
+/// `~/.cyte/config-dir.json`: the folder the user moved the data to
 /// (`dataDir`; the default when absent), and the one it was moved from
 /// (`previousDataDir`) until the app has asked what to do with what is
 /// left there.
@@ -199,7 +199,7 @@ class DataDirectoryPointer {
 
   /// Where it is, under [home].
   static String fileIn(String home) =>
-      p.join(home, '.ayte', 'config-dir.json');
+      p.join(home, '.cyte', 'config-dir.json');
 
   /// What [file] says; null when there is no such file. Throws a
   /// [FormatException] when it is not a pointer (or cannot be read).

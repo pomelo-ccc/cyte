@@ -57,10 +57,10 @@ class FinderSync: FIFinderSync {
     return image
   }
 
-  override var toolbarItemName: String { "Ayte" }
+  override var toolbarItemName: String { "Cyte" }
 
   override var toolbarItemToolTip: String {
-    Self.chinese ? "在 Ayte 中打开当前文件夹" : "Open the current folder in Ayte"
+    Self.chinese ? "在 Cyte 中打开当前文件夹" : "Open the current folder in Cyte"
   }
 
   override var toolbarItemImage: NSImage { Self.icon(size: 32) }
@@ -80,7 +80,7 @@ class FinderSync: FIFinderSync {
     }
     let icon = Self.icon(size: 16)
     let agent = NSMenuItem(
-      title: Self.openWith("Ayte"), action: #selector(openAgent(_:)), keyEquivalent: "")
+      title: Self.openWith("Cyte"), action: #selector(openAgent(_:)), keyEquivalent: "")
     agent.image = icon
     menu.addItem(agent)
     let ide = NSMenuItem(
@@ -118,7 +118,7 @@ class FinderSync: FIFinderSync {
     var allowed = CharacterSet.alphanumerics
     allowed.insert(charactersIn: "-._~/")
     var components = URLComponents()
-    components.scheme = "ayte"
+    components.scheme = "cyte"
     components.host = mode
     components.percentEncodedQuery = paths.map {
       "path=" + ($0.addingPercentEncoding(withAllowedCharacters: allowed) ?? "")

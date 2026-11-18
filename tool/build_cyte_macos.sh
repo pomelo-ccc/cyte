@@ -11,7 +11,7 @@ if [[ ! -d "$BASE_APP" ]]; then
 fi
 
 if [[ ! -d "$BASE_APP" ]]; then
-  echo "Error: base macOS .app bundle not found at /Applications/Ayte.app" >&2
+  echo "Error: base macOS .app bundle not found at /Applications/Ayte.app or /Applications/Byte.app" >&2
   exit 1
 fi
 
@@ -36,38 +36,45 @@ cd "$REPO"
   -dXcodeBuildScript=prepare \
   release_macos_bundle_flutter_assets
 
-ditto "$STAGE_DIR/Template.app" "$STAGE_DIR/Ayte.app"
+ditto "$STAGE_DIR/Template.app" "$STAGE_DIR/Cyte.app"
+if [[ -f "$STAGE_DIR/Cyte.app/Contents/MacOS/Kestrel" ]]; then
+  mv "$STAGE_DIR/Cyte.app/Contents/MacOS/Kestrel" "$STAGE_DIR/Cyte.app/Contents/MacOS/Cyte"
+elif [[ -f "$STAGE_DIR/Cyte.app/Contents/MacOS/Ayte" ]]; then
+  mv "$STAGE_DIR/Cyte.app/Contents/MacOS/Ayte" "$STAGE_DIR/Cyte.app/Contents/MacOS/Cyte"
+fi
+
 FULL_VER="$(sed -n 's/^version:[[:space:]]*//p' "$REPO/pubspec.yaml")"
 SHORT_VER="${FULL_VER%%+*}"
 BUILD_VER="${FULL_VER#*+}"
 if [[ "$BUILD_VER" == "$FULL_VER" ]]; then BUILD_VER="0"; fi
 
-PLIST="$STAGE_DIR/Ayte.app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleName Ayte" "$PLIST"
-/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ayte" "$PLIST" 2>/dev/null || \
-  /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Ayte" "$PLIST"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier dev.ayte.desktop" "$PLIST"
+PLIST="$STAGE_DIR/Cyte.app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Cyte" "$PLIST"
+/usr/libexec/PlistBuddy -c "Set :CFBundleName Cyte" "$PLIST"
+/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cyte" "$PLIST" 2>/dev/null || \
+  /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cyte" "$PLIST"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier dev.cyte.desktop" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile AppIcon" "$PLIST" 2>/dev/null || \
   /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$PLIST"
 /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $SHORT_VER" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_VER" "$PLIST"
-/usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright 'Copyright © 2026 Ayte. All rights reserved.'" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :NSAppleEventsUsageDescription 'A program run in Ayte wants to control another app.'" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :NSLocalNetworkUsageDescription 'Ayte lets the phones paired with it find it on the local network.'" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLName dev.ayte.desktop" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ayte" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :NSHumanReadableCopyright 'Copyright © 2026 Cyte. All rights reserved.'" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :NSAppleEventsUsageDescription 'A program run in Cyte wants to control another app.'" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :NSLocalNetworkUsageDescription 'Cyte lets the phones paired with it find it on the local network.'" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLName dev.cyte.desktop" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 cyte" "$PLIST" 2>/dev/null || true
 
-EXT_PLIST="$STAGE_DIR/Ayte.app/Contents/PlugIns/FinderExtension.appex/Contents/Info.plist"
+EXT_PLIST="$STAGE_DIR/Cyte.app/Contents/PlugIns/FinderExtension.appex/Contents/Info.plist"
 if [[ -f "$EXT_PLIST" ]]; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Ayte" "$EXT_PLIST" 2>/dev/null || \
-    /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Ayte" "$EXT_PLIST"
-  /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier dev.ayte.desktop.FinderExtension" "$EXT_PLIST"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cyte" "$EXT_PLIST" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cyte" "$EXT_PLIST"
+  /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier dev.cyte.desktop.FinderExtension" "$EXT_PLIST"
   /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $SHORT_VER" "$EXT_PLIST" 2>/dev/null || true
   /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_VER" "$EXT_PLIST" 2>/dev/null || true
 fi
 
-rm -f "$STAGE_DIR/Ayte.app/Contents/Resources/Assets.car"
+rm -f "$STAGE_DIR/Cyte.app/Contents/Resources/Assets.car"
 ICONSET_DIR="$STAGE_DIR/AppIcon.iconset"
 mkdir -p "$ICONSET_DIR"
 APPICON_SRC="$REPO/macos/Runner/Assets.xcassets/AppIcon.appiconset"
@@ -82,21 +89,20 @@ if [[ -d "$APPICON_SRC" ]]; then
   cp "$APPICON_SRC/app_icon_512.png"  "$ICONSET_DIR/icon_256x256@2x.png"
   cp "$APPICON_SRC/app_icon_512.png"  "$ICONSET_DIR/icon_512x512.png"
   cp "$APPICON_SRC/app_icon_1024.png" "$ICONSET_DIR/icon_512x512@2x.png"
-  iconutil -c icns "$ICONSET_DIR" -o "$STAGE_DIR/Ayte.app/Contents/Resources/AppIcon.icns"
+  iconutil -c icns "$ICONSET_DIR" -o "$STAGE_DIR/Cyte.app/Contents/Resources/AppIcon.icns"
 fi
 
-rm -rf "$STAGE_DIR/Ayte.app/Contents/Frameworks/App.framework"
-cp -R "$REPO/build/macos/Build/Products/Release/App.framework" "$STAGE_DIR/Ayte.app/Contents/Frameworks/"
+rm -rf "$STAGE_DIR/Cyte.app/Contents/Frameworks/App.framework"
+cp -R "$REPO/build/macos/Build/Products/Release/App.framework" "$STAGE_DIR/Cyte.app/Contents/Frameworks/"
 "$CLANG" -isysroot "$SDK_ROOT" -dynamiclib -fobjc-arc -framework Cocoa -framework Carbon \
   -x objective-c "$REPO/macos/Runner/KestrelNotch.m" \
-  -o "$STAGE_DIR/Ayte.app/Contents/Frameworks/libKestrelNotch.dylib"
+  -o "$STAGE_DIR/Cyte.app/Contents/Frameworks/libKestrelNotch.dylib"
 
-xattr -cr "$STAGE_DIR/Ayte.app"
-codesign --force --deep --sign - "$STAGE_DIR/Ayte.app"
-codesign --verify --deep --strict "$STAGE_DIR/Ayte.app"
-rm -rf "/Applications/Ayte.app"
-mv "$STAGE_DIR/Ayte.app" "/Applications/Ayte.app"
-touch "/Applications/Ayte.app"
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "/Applications/Ayte.app" || true
-killall iconservicesagent usernoted NotificationCenter 2>/dev/null || true
-echo "✓ Built and installed /Applications/Ayte.app"
+xattr -cr "$STAGE_DIR/Cyte.app"
+codesign --force --deep --sign - "$STAGE_DIR/Cyte.app"
+codesign --verify --deep --strict "$STAGE_DIR/Cyte.app"
+rm -rf "/Applications/Cyte.app"
+mv "$STAGE_DIR/Cyte.app" "/Applications/Cyte.app"
+touch "/Applications/Cyte.app"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "/Applications/Cyte.app" || true
+echo "✓ Built and installed /Applications/Cyte.app"

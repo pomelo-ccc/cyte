@@ -50,7 +50,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageSettingsDescription =>
-      'The language of Ayte\'s menus, views and messages. Changes apply at once.';
+      'The language of Cyte\'s menus, views and messages. Changes apply at once.';
 
   @override
   String languageSettingsFollowSystemCurrent(String language) {
@@ -1460,7 +1460,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuContextPanel => 'Context Panel';
 
   @override
-  String get menuAboutBaoCode => 'About Ayte';
+  String get menuAboutBaoCode => 'About Cyte';
 
   @override
   String get windowShowSidebar => 'Show sidebar';
@@ -1499,14 +1499,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sidePanelTerminal => 'Terminal';
 
   @override
-  String get browserOtherApp => 'Another Ayte is connected to the browser.';
+  String get browserOtherApp => 'Another Cyte is connected to the browser.';
 
   @override
   String get browserWatchTitle => 'Watching you in the browser';
 
   @override
   String get browserWatchHint =>
-      'Do it in the Ayte tab of your browser. When you\'re done, click Done here or the Ayte button in the browser\'s toolbar.';
+      'Do it in the Cyte tab of your browser. When you\'re done, click Done here or the Cyte button in the browser\'s toolbar.';
 
   @override
   String browserWatchSteps(int count) {
@@ -3750,7 +3750,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalSettingsClaudeCoreDescription =>
-      'Antigravity CLI: uses your local Google Antigravity (agy) sign-in and setup. Built-in: comes with Ayte, using only the custom API providers added in Settings → Models. Changes apply to new sessions.';
+      'CodeBuddy CLI: uses your local Tencent CodeBuddy (codebuddy / cbc) sign-in and setup. Built-in: comes with Cyte, using only the custom API providers added in Settings → Models. Changes apply to new sessions.';
 
   @override
   String get generalSettingsClaudeCoreBuiltin => 'Built-in';
@@ -3885,7 +3885,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Closing the window hides it there and the agents keep running; its menu shows the agents waiting on you, and quits the app.';
 
   @override
-  String get trayShow => 'Show Ayte';
+  String get trayShow => 'Show Cyte';
 
   @override
   String get trayWaiting => 'Waiting for You';
@@ -3901,7 +3901,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get trayQuit => 'Quit Ayte';
+  String get trayQuit => 'Quit Cyte';
 
   @override
   String get attentionNeedsInput => 'Needs your input';
@@ -5492,9 +5492,9 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Ayte does not know the context keys $keys: this keybinding never applies.',
+          'Cyte does not know the context keys $keys: this keybinding never applies.',
       one:
-          'Ayte does not know the context key $keys: this keybinding never applies.',
+          'Cyte does not know the context key $keys: this keybinding never applies.',
     );
     return '$_temp0';
   }
@@ -5571,7 +5571,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String kbCannotReadKey(String key) {
-    return 'Ayte cannot read the key “$key”: this keybinding never applies.';
+    return 'Cyte cannot read the key “$key”: this keybinding never applies.';
   }
 
   @override
@@ -5579,7 +5579,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kbNotSupportedHover =>
-      'Ayte does not have this command: the keybinding is kept, but does nothing.';
+      'Cyte does not have this command: the keybinding is kept, but does nothing.';
 
   @override
   String get kbPressKeys =>
@@ -5643,25 +5643,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataDirChecking => 'Checking the folder…';
 
   @override
-  String get dataDirAlreadyHolds => 'The folder already holds Ayte data';
+  String get dataDirAlreadyHolds => 'The folder already holds Cyte data';
 
   @override
-  String get dataDirMoveBack => 'Move Ayte\'s data back to the default folder?';
+  String get dataDirMoveBack => 'Move Cyte\'s data back to the default folder?';
 
   @override
-  String get dataDirMoveHere => 'Move Ayte\'s data to this folder?';
+  String get dataDirMoveHere => 'Move Cyte\'s data to this folder?';
 
   @override
   String get dataDirUseAsIsDetail =>
-      'After a restart Ayte uses the data there as it is; nothing is copied, and the current folder keeps yours.';
+      'After a restart Cyte uses the data there as it is; nothing is copied, and the current folder keeps yours.';
 
   @override
   String get dataDirCopyDetail =>
-      'Ayte copies its settings, keybindings, language servers and state there, and uses that folder after a restart.';
+      'Cyte copies its settings, keybindings, language servers and state there, and uses that folder after a restart.';
 
   @override
   String get dataDirOtherFiles =>
-      'The folder holds other files: they stay, beside Ayte\'s own.';
+      'The folder holds other files: they stay, beside Cyte\'s own.';
 
   @override
   String get dataDirUseItsData => 'Use Its Data';
@@ -5688,18 +5688,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dataDirRestartTitle => 'Restart Ayte to use the new data folder';
+  String get dataDirRestartTitle => 'Restart Cyte to use the new data folder';
 
   @override
   String dataDirRestartDetail(String current, String next) {
-    return 'Ayte keeps using $current until it restarts. The next start uses $next, and offers to remove what is left in the old one.';
+    return 'Cyte keeps using $current until it restarts. The next start uses $next, and offers to remove what is left in the old one.';
   }
 
   @override
   String get dataDirTheNewFolder => 'the new folder';
 
   @override
-  String get quitConfirmMessage => 'Quit Ayte?';
+  String get quitConfirmMessage => 'Quit Cyte?';
 
   @override
   String get quitConfirmDetail =>
@@ -5737,7 +5737,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataDirDescription =>
-      'Where Ayte keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); Ayte never moves or removes those.';
+      'Where Cyte keeps your settings, keybindings, language servers and its own state. Other programs keep files there too (the web view\'s caches); Cyte never moves or removes those.';
 
   @override
   String get dataDirCurrentFolder => 'Current folder';
@@ -5768,13 +5768,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataDirSettingUnreadable =>
-      'Ayte\'s data folder setting cannot be read';
+      'Cyte\'s data folder setting cannot be read';
 
   @override
-  String get dataDirCannotWrite => 'Ayte cannot write to its data folder';
+  String get dataDirCannotWrite => 'Cyte cannot write to its data folder';
 
   @override
-  String get dataDirUnavailable => 'Ayte\'s data folder is not available';
+  String get dataDirUnavailable => 'Cyte\'s data folder is not available';
 
   @override
   String dataDirWhereEnv(String variable) {
@@ -5783,7 +5783,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dataDirWhereFixPointer(String file) {
-    return 'Fix or delete $file and try again; Ayte changes it only if you choose another folder.';
+    return 'Fix or delete $file and try again; Cyte changes it only if you choose another folder.';
   }
 
   @override
@@ -5807,11 +5807,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataDirRemoveOldTitle =>
-      'Remove the data Ayte left in its previous folder?';
+      'Remove the data Cyte left in its previous folder?';
 
   @override
   String dataDirRemoveOldDetail(String current, String items) {
-    return 'Ayte now keeps its data in $current. Only its own items are removed from the previous folder ($items); the folder and everything else in it stay.';
+    return 'Cyte now keeps its data in $current. Only its own items are removed from the previous folder ($items); the folder and everything else in it stay.';
   }
 
   @override
@@ -5826,7 +5826,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dataDirRemoveOldInUseDetail(String items) {
-    return 'Files in $items are in use, perhaps by another program. Everything else was removed; Ayte offers to remove the rest the next time it starts.';
+    return 'Files in $items are in use, perhaps by another program. Everything else was removed; Cyte offers to remove the rest the next time it starts.';
   }
 
   @override
@@ -6052,7 +6052,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shellCommandOccupied(String path, String name) {
-    return '$path already runs another app\'s \'$name\' command. Replace it with Ayte\'s?';
+    return '$path already runs another app\'s \'$name\' command. Replace it with Cyte\'s?';
   }
 
   @override
@@ -6073,7 +6073,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalSettingsMainWindowDescription =>
-      'What Ayte opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.';
+      'What Cyte opens to: the agents, or the IDE windows (as Restore Windows says), never both. By default, wherever it was left when it last quit.';
 
   @override
   String generalSettingsMainWindowLabel(String name) {
@@ -6131,7 +6131,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String claudePathInUseDownloaded(String version) {
-    return 'In use: Claude Code $version, downloaded by Ayte';
+    return 'In use: Claude Code $version, downloaded by Cyte';
   }
 
   @override
@@ -6286,7 +6286,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String generalSettingsShellCommandDescription(String location) {
-    return 'Open files and folders in Ayte from a terminal: \'code <path>\'. Installed at $location.';
+    return 'Open files and folders in Cyte from a terminal: \'code <path>\'. Installed at $location.';
   }
 
   @override
@@ -6599,7 +6599,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modelsFeaturedWhy => 'Why am I seeing this?';
 
   @override
-  String get modelsFeaturedNote => 'These sites are officially listed by Ayte';
+  String get modelsFeaturedNote => 'These sites are officially listed by Cyte';
 
   @override
   String get modelsFeaturedNoteHow =>
@@ -6666,7 +6666,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelsImportInvalidDetail =>
-      'It needs a base URL (http or https) and a protocol Ayte knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.';
+      'It needs a base URL (http or https) and a protocol Cyte knows. Ask the site for a new link, or add the upstream by hand in Settings → Models.';
 
   @override
   String get modelsAddProvider => 'Add Upstream';
@@ -6769,7 +6769,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelsAccountsImportConfirmDetail =>
-      'Ayte will keep the credentials securely without changing the original file or actively refreshing tokens during import. Renewing them later may rotate the refresh token and require the original tool to sign in again. Only import credentials you are authorized to use.';
+      'Cyte will keep the credentials securely without changing the original file or actively refreshing tokens during import. Renewing them later may rotate the refresh token and require the original tool to sign in again. Only import credentials you are authorized to use.';
 
   @override
   String get modelsAccountsImportFailed =>
@@ -7154,7 +7154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelsRolesDescription =>
-      'Which model Claude Code uses for each part of its work. Unset, the model picked stands in. All but the main model may be another upstream\'s: Ayte\'s local proxy sends their requests there.';
+      'Which model Claude Code uses for each part of its work. Unset, the model picked stands in. All but the main model may be another upstream\'s: Cyte\'s local proxy sends their requests there.';
 
   @override
   String get modelsRoleUnset => 'Unset';
@@ -7479,7 +7479,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updatesSettingsDescription =>
-      'Ayte looks for new versions on kestrel.dev.';
+      'Cyte looks for new versions on kestrel.dev.';
 
   @override
   String get updateCurrentVersion => 'Current Version';
@@ -7499,31 +7499,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateChecking => 'Checking for updates…';
 
   @override
-  String get updateUpToDate => 'Ayte is up to date.';
+  String get updateUpToDate => 'Cyte is up to date.';
 
   @override
   String updateAvailable(String version) {
-    return 'Ayte $version is available.';
+    return 'Cyte $version is available.';
   }
 
   @override
   String updateReady(String version) {
-    return 'Ayte $version has been downloaded. Restart to update.';
+    return 'Cyte $version has been downloaded. Restart to update.';
   }
 
   @override
   String updateDownloading(String version) {
-    return 'Downloading Ayte $version…';
+    return 'Downloading Cyte $version…';
   }
 
   @override
   String updateDownloadingProgress(String version, int percent) {
-    return 'Downloading Ayte $version… $percent%';
+    return 'Downloading Cyte $version… $percent%';
   }
 
   @override
   String updateMandatory(String version) {
-    return 'This version of Ayte is no longer supported. Update to $version to keep using it.';
+    return 'This version of Cyte is no longer supported. Update to $version to keep using it.';
   }
 
   @override
@@ -7541,7 +7541,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String updateFailed(String error) {
-    return 'Couldn\'t update Ayte: $error';
+    return 'Couldn\'t update Cyte: $error';
   }
 
   @override
@@ -7554,11 +7554,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Updates are turned off (update.mode is \"none\").';
 
   @override
-  String get updateUnsupported => 'This build of Ayte doesn\'t update itself.';
+  String get updateUnsupported => 'This build of Cyte doesn\'t update itself.';
 
   @override
   String updateManual(String reason) {
-    return 'Ayte can\'t update itself here ($reason). Download the new version from kestrel.dev.';
+    return 'Cyte can\'t update itself here ($reason). Download the new version from kestrel.dev.';
   }
 
   @override
@@ -7566,7 +7566,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String updateUnfinished(String version, String current) {
-    return 'Ayte $version wasn\'t installed: this is still $current. Try again from Settings > Updates, or download it from kestrel.dev.';
+    return 'Cyte $version wasn\'t installed: this is still $current. Try again from Settings > Updates, or download it from kestrel.dev.';
   }
 
   @override
@@ -7585,7 +7585,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateModeDescription =>
-      'Whether Ayte looks for new versions by itself (update.mode).';
+      'Whether Cyte looks for new versions by itself (update.mode).';
 
   @override
   String updateModeLabel(String name) {
@@ -7606,7 +7606,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsDescription =>
-      'Send Ayte\'s error logs and the crash and hang reports the system kept of it to its developers to help track down a problem. Nothing is sent until you upload.';
+      'Send Cyte\'s error logs and the crash and hang reports the system kept of it to its developers to help track down a problem. Nothing is sent until you upload.';
 
   @override
   String get diagnosticsUpload => 'Upload…';
@@ -7657,7 +7657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsUploadedDetail =>
-      'Give this ID to Ayte\'s developers so they can find these logs.';
+      'Give this ID to Cyte\'s developers so they can find these logs.';
 
   @override
   String diagnosticsOmittedDumps(int count) {
@@ -8037,11 +8037,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generalSettingsContextMenuDescription =>
-      'Adds \"Open with Ayte\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.';
+      'Adds \"Open with Cyte\" (a new agent) and \"Open with Fast Ide\" (a new IDE window) to the context menu of files, folders and a folder\'s background.';
 
   @override
   String get generalSettingsContextMenuMacNote =>
-      'Finder\'s own setting is in System Settings\' extensions, where the Ayte extension can also be turned on and off.';
+      'Finder\'s own setting is in System Settings\' extensions, where the Cyte extension can also be turned on and off.';
 
   @override
   String get generalSettingsContextMenuOn => 'On';
@@ -8244,7 +8244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateButton => 'Update';
 
   @override
-  String get tipsSetupTitle => 'Set Up Ayte';
+  String get tipsSetupTitle => 'Set Up Cyte';
 
   @override
   String tipsSetupCount(int done, int total) {
@@ -8278,7 +8278,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tipsUpdated(String version, String features) {
-    return 'Ayte was updated to $version. New: $features.';
+    return 'Cyte was updated to $version. New: $features.';
   }
 
   @override
@@ -8293,7 +8293,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipContextMenuBody =>
-      'Open files and folders in Ayte from their context menu.';
+      'Open files and folders in Cyte from their context menu.';
 
   @override
   String tipShellCommandTitle(String name) {
@@ -8302,7 +8302,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tipShellCommandBody(String name) {
-    return 'Open folders in Ayte from a terminal: $name <path>.';
+    return 'Open folders in Cyte from a terminal: $name <path>.';
   }
 
   @override
@@ -8320,14 +8320,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmdShowSetupGuide => 'Show Setup Guide';
 
   @override
-  String get cmdStarOnGitHub => 'Star Ayte on GitHub';
+  String get cmdStarOnGitHub => 'Star Cyte on GitHub';
 
   @override
-  String get starPromptMessage => 'Enjoying Ayte?';
+  String get starPromptMessage => 'Enjoying Cyte?';
 
   @override
   String get starPromptDetail =>
-      'Ayte is free and open source. If it helps you, a star on GitHub helps other people find it.';
+      'Cyte is free and open source. If it helps you, a star on GitHub helps other people find it.';
 
   @override
   String get starPromptStar => 'Star on GitHub';
@@ -8521,14 +8521,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networkSettingsDescription =>
-      'How Ayte and the Claude Code it starts reach the internet.';
+      'How Cyte and the Claude Code it starts reach the internet.';
 
   @override
   String get networkProxy => 'Proxy';
 
   @override
   String get networkProxyDescription =>
-      'The proxy for Ayte and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.';
+      'The proxy for Cyte and Claude Code (http.proxyMode). System Proxy follows the system\'s settings, such as Clash\'s system proxy. New sessions take a change; restart a running one for it.';
 
   @override
   String networkProxyLabel(String name) {
@@ -8588,7 +8588,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networkProxyStatusAutoConfig =>
-      'Direct: the system sets its proxy with an auto-config (PAC) file, which Ayte doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.';
+      'Direct: the system sets its proxy with an auto-config (PAC) file, which Cyte doesn\'t follow. Turn on Clash\'s system proxy, or enter the address manually.';
 
   @override
   String get networkProxyRefresh => 'Detect Again';
@@ -8670,7 +8670,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get extsCapabilityPartialDetail =>
-      'Its themes apply; the rest of it does nothing in Ayte.';
+      'Its themes apply; the rest of it does nothing in Cyte.';
 
   @override
   String extsEngineIncompatible(String current, String requested) {
@@ -8881,7 +8881,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get extsCapabilityUnsupportedDetail =>
-      'It has no color or file icon theme: Ayte only uses themes from extensions.';
+      'It has no color or file icon theme: Cyte only uses themes from extensions.';
 
   @override
   String get extsFindingCode => 'Its code does not run.';
@@ -8994,7 +8994,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobileSettingsDescription =>
-      'Follow and drive this computer\'s agents from Ayte on your phone: directly on the same network, across the internet through a hole punched in the routers between them, or through Ayte\'s relay when neither works. What goes between them is end-to-end encrypted; a relay cannot read it.';
+      'Follow and drive this computer\'s agents from Cyte on your phone: directly on the same network, across the internet through a hole punched in the routers between them, or through Cyte\'s relay when neither works. What goes between them is end-to-end encrypted; a relay cannot read it.';
 
   @override
   String get mobileAllow => 'Allow Phones to Connect';
@@ -9029,7 +9029,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobilePairDescription =>
-      'Scan the code with Ayte on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.';
+      'Scan the code with Cyte on the phone (Me → Paired computers → Pair a computer), or pick this computer under Nearby Computers there.';
 
   @override
   String get mobilePairShow => 'Show QR Code';
@@ -9182,14 +9182,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mobileRelayModeAutoDescription =>
-      'Ayte\'s relays, the nearest that answers.';
+      'Cyte\'s relays, the nearest that answers.';
 
   @override
   String get mobileRelayModePinned => 'Pick One';
 
   @override
   String get mobileRelayModePinnedDescription =>
-      'Only the one picked: one of Ayte\'s, or a custom address.';
+      'Only the one picked: one of Cyte\'s, or a custom address.';
 
   @override
   String get mobileRelayModeDirect => 'Direct Only';
@@ -9716,7 +9716,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get stashImplement => 'Implement in Ayte';
+  String get stashImplement => 'Implement in Cyte';
 
   @override
   String get stashImplementHow => 'How should the agent work on it?';
@@ -9833,7 +9833,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stashSettingsDirectoryRestart =>
-      'Takes effect after Ayte restarts.';
+      'Takes effect after Cyte restarts.';
 
   @override
   String get stashAll => 'All';
@@ -9973,7 +9973,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountsSignOutDetail(String forge) {
-    return 'The token is deleted from this computer. To revoke Ayte\'s access altogether, revoke it in your $forge settings too.';
+    return 'The token is deleted from this computer. To revoke Cyte\'s access altogether, revoke it in your $forge settings too.';
   }
 
   @override
@@ -10029,7 +10029,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String issuer,
     String fingerprint,
   ) {
-    return 'The certificate of $host cannot be verified ($issuer).\n\nSHA-256 fingerprint:\n$fingerprint\n\nTrusting it lets Ayte reach this server, and only the certificate with this fingerprint is accepted. You are asked again if the certificate changes.';
+    return 'The certificate of $host cannot be verified ($issuer).\n\nSHA-256 fingerprint:\n$fingerprint\n\nTrusting it lets Cyte reach this server, and only the certificate with this fingerprint is accepted. You are asked again if the certificate changes.';
   }
 
   @override
@@ -10042,7 +10042,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountsBrowserDetail(String host) {
-    return 'Enter this code on $host to let Ayte access your account:';
+    return 'Enter this code on $host to let Cyte access your account:';
   }
 
   @override
@@ -10261,7 +10261,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stashWelcomeAgent =>
-      'Click Implement in Ayte, or mention it in a conversation; the conversation and the stash stay linked.';
+      'Click Implement in Cyte, or mention it in a conversation; the conversation and the stash stay linked.';
 
   @override
   String get stashWelcomeTrackTitle => 'See how it goes';
@@ -10333,7 +10333,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserSettingsNotRunningDescription =>
-      'Open a browser with Ayte\'s extension: it connects automatically.';
+      'Open a browser with Cyte\'s extension: it connects automatically.';
 
   @override
   String get browserSettingsSandboxed =>
@@ -10341,7 +10341,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserSettingsSandboxedDescription =>
-      'Their sandbox keeps Ayte\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.';
+      'Their sandbox keeps Cyte\'s helper from running. Install the browser from its own .deb or .rpm package instead, such as Google Chrome from google.com/chrome.';
 
   @override
   String browserSettingsConnected(String browser) {
@@ -10364,14 +10364,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserSettingsAppOld =>
-      'The extension is newer than this Ayte. Update Ayte.';
+      'The extension is newer than this Cyte. Update Cyte.';
 
   @override
   String get browserSettingsNoFileAccess => 'File access is off';
 
   @override
   String get browserSettingsNoFileAccessDescription =>
-      'Agents can\'t open local HTML files or upload files. In chrome://extensions, click Details on Ayte and turn on Allow access to file URLs.';
+      'Agents can\'t open local HTML files or upload files. In chrome://extensions, click Details on Cyte and turn on Allow access to file URLs.';
 
   @override
   String get browserSettingsInstall => 'Get the Extension';
@@ -10404,7 +10404,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserHistoryDescription =>
-      'What the tabs shared with Ayte do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.';
+      'What the tabs shared with Cyte do is kept as it happens, no recording needed: the pages, the requests, console errors and warnings. Agents look back at it when you ask (“it failed when I saved”). Kept on this computer; cookies and tokens are not.';
 
   @override
   String get browserHistoryDetailed => 'Detailed history';
@@ -10445,14 +10445,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get browserWelcomeLead =>
-      'With Ayte\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.';
+      'With Cyte\'s extension, agents open pages, read them, click and type in your own Chrome, signed in as you are.';
 
   @override
   String get browserWelcomeSharedTitle => 'Only the tabs you share';
 
   @override
   String get browserWelcomeShared =>
-      'They work in the yellow Ayte tab group alone; your other tabs stay yours.';
+      'They work in the yellow Cyte tab group alone; your other tabs stay yours.';
 
   @override
   String get browserWelcomeWatchTitle => 'Watch it work';
@@ -10508,7 +10508,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelWelcomeLead =>
-      'Ayte runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.';
+      'Cyte runs your agents on a model of your choosing. Add an upstream, a service with an API key, and its models are ready to use.';
 
   @override
   String get modelWelcomeAnyTitle => 'Any upstream';
@@ -10714,7 +10714,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sshServerCoreBuiltinHint =>
-      'Ayte\'s own core: it runs on the upstreams of Settings → Models.';
+      'Cyte\'s own core: it runs on the upstreams of Settings → Models.';
 
   @override
   String get sshServerCoreCliHint =>
@@ -10790,7 +10790,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'WSL could not start this distribution: check that WSL is installed and that the distribution is listed by wsl --list.';
 
   @override
-  String get channelSetupTitle => 'Welcome to Ayte';
+  String get channelSetupTitle => 'Welcome to Cyte';
 
   @override
   String get channelSetupLead =>
@@ -10801,21 +10801,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelSetupStep =>
-      'Ayte opens kestrel.dev in your browser. Once the page says it\'s done, Ayte continues on its own.';
+      'Cyte opens kestrel.dev in your browser. Once the page says it\'s done, Cyte continues on its own.';
 
   @override
   String get channelSetupWaitingTitle => 'Waiting for your browser…';
 
   @override
   String get channelSetupWaiting =>
-      'Once the page says it\'s done, Ayte continues on its own. Closed the page by mistake? Open it again.';
+      'Once the page says it\'s done, Cyte continues on its own. Closed the page by mistake? Open it again.';
 
   @override
   String get channelSetupOpenFailedTitle => 'Your browser didn\'t open';
 
   @override
   String get channelSetupOpenFailed =>
-      'Copy this address and open it in your browser. Once the page says it\'s done, Ayte continues on its own.';
+      'Copy this address and open it in your browser. Once the page says it\'s done, Cyte continues on its own.';
 
   @override
   String get channelSetupAddressCopied => 'Copied';
@@ -10852,7 +10852,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelSetupLinkOther =>
-      'That link is for another Ayte install. Use the page this Ayte opened.';
+      'That link is for another Cyte install. Use the page this Cyte opened.';
 
   @override
   String get channelSetupTrouble => 'Having trouble?';
@@ -10869,7 +10869,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelSetupPrivate =>
-      'The page only tells Ayte where you heard of it, like a video or a website.';
+      'The page only tells Cyte where you heard of it, like a video or a website.';
 
   @override
   String get channelSetupFindingTitle => 'Getting your channel ready…';
@@ -10882,7 +10882,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelSetupSiteOffline =>
-      'Ayte needs to be online to read your channel. Check your connection and retry.';
+      'Cyte needs to be online to read your channel. Check your connection and retry.';
 
   @override
   String get channelSetupUnavailableTitle => 'This channel isn\'t available';
@@ -10935,7 +10935,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelAccountSignOutDetail(String channel) {
-    return 'You\'ll need to sign in to $channel again to keep using Ayte.';
+    return 'You\'ll need to sign in to $channel again to keep using Cyte.';
   }
 
   @override
@@ -10991,7 +10991,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutTagline =>
-      'Native desktop workbench for Google Antigravity (agy)';
+      'Native desktop workbench for Tencent CodeBuddy (codebuddy / cbc)';
 
   @override
   String aboutVersion(String version, int build) {
@@ -11203,7 +11203,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stashImplementEmpty =>
-      'Write something first, then implement it in Ayte';
+      'Write something first, then implement it in Cyte';
 
   @override
   String stashIssueDuplicateBanner(String issue, String stash) {
@@ -13212,7 +13212,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ustatConversationEmptyDetail =>
-      'Only conversations on a custom upstream are counted: Claude\'s official service does not go through Ayte\'s proxy.';
+      'Only conversations on a custom upstream are counted: Claude\'s official service does not go through Cyte\'s proxy.';
 
   @override
   String get ustatRecordOff => 'Usage is not being recorded';
@@ -13232,7 +13232,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ustatRecordDescription =>
-      'Claude Code\'s own calls are read from what it prints; sessions on a custom upstream go through Ayte\'s local proxy, which keeps each call. Applies to agents started from now on.';
+      'Claude Code\'s own calls are read from what it prints; sessions on a custom upstream go through Cyte\'s local proxy, which keeps each call. Applies to agents started from now on.';
 
   @override
   String get ustatRecordOffDescription =>
@@ -13715,7 +13715,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ustatPricesAgentHint =>
-      'Ayte can keep these for you: ask it in a chat to look up the current prices of these models and update them. It checks the upstream\'s own pricing page and writes them here.';
+      'Cyte can keep these for you: ask it in a chat to look up the current prices of these models and update them. It checks the upstream\'s own pricing page and writes them here.';
 
   @override
   String get ustatPriceCurrency => 'Currency';

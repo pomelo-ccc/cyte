@@ -1,7 +1,7 @@
-// What Antigravity (agy) is customized with, as the Customize page lists it:
-// skills, subagents, slash commands, rules (GEMINI.md, AGENTS.md and `rules/`),
+// What CodeBuddy CLI (codebuddy) is customized with, as the Customize page lists it:
+// skills, subagents, slash commands, rules (CODEBUDDY.md, AGENTS.md and `rules/`),
 // project memories, MCP servers, hooks and plugins, each the user's own
-// (under `~/.gemini/config`) or a project's (under `<project>/.agents/`).
+// (under `~/.codebuddy`) or a project's (under `<project>/.codebuddy/`).
 // See customization_store.dart for where each is read from.
 
 /// The kinds the page has a chip for, in its order.
@@ -203,21 +203,21 @@ bool followsOfficialNaming(CustomizationKind kind, String name) =>
       _ => true,
     };
 
-/// What a new one of [kind] named [name] starts as.
+  /// What a new one of [kind] named [name] starts as.
 String template(CustomizationKind kind, String name) => switch (kind) {
   CustomizationKind.skills =>
     '---\n'
         'name: $name\n'
-        'description: What this skill does, and when Antigravity should use it.\n'
+        'description: What this skill does, and when CodeBuddy should use it.\n'
         '---\n'
         '\n'
         '# $name\n'
         '\n'
-        'Instructions Antigravity follows when it uses this skill.\n',
+        'Instructions CodeBuddy follows when it uses this skill.\n',
   CustomizationKind.subagents =>
     '---\n'
         'name: $name\n'
-        'description: When Antigravity should hand a task to this subagent.\n'
+        'description: When CodeBuddy should hand a task to this subagent.\n'
         '---\n'
         '\n'
         'You are a subagent that…\n',
@@ -227,7 +227,7 @@ String template(CustomizationKind kind, String name) => switch (kind) {
         '---\n'
         '\n'
         'The prompt /$name sends. \$ARGUMENTS stands for what follows it.\n',
-  CustomizationKind.rules => '# $name\n\n- A rule Antigravity keeps to.\n',
+  CustomizationKind.rules => '# $name\n\n- A rule CodeBuddy keeps to.\n',
   CustomizationKind.plugins ||
   CustomizationKind.mcps ||
   CustomizationKind.hooks ||

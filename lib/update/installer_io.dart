@@ -62,7 +62,7 @@ PlatformUpdates? platformUpdates({required String updatesDirectory}) {
     manifestUrl: manifestUrl,
     backend: IoUpdateBackend(
       directory: updatesDirectory,
-      userAgent: 'Ayte/$currentAppVersion ($edition)',
+      userAgent: 'Cyte/$currentAppVersion ($edition)',
     ),
     installer: installer,
   );
@@ -466,7 +466,7 @@ rm -f "\$0"
 // --- Linux -------------------------------------------------------------------
 
 /// Where the package (tool/package_linux_deb.sh) installs the app.
-const linuxInstallDirectory = '/opt/ayte';
+const linuxInstallDirectory = '/opt/cyte';
 
 /// The Linux build an app updates to: the one for the processor.
 @visibleForTesting
@@ -534,7 +534,7 @@ class LinuxUpdateInstaller implements UpdateInstaller {
       final result = await processes.run('dpkg-query', [
         '-W',
         r'-f=${Status}',
-        'ayte',
+        'cyte',
       ]);
       return result.exitCode == 0 &&
           '${result.stdout}'.contains('install ok installed');

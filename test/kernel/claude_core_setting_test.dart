@@ -3,8 +3,8 @@ library;
 
 import 'dart:io';
 
-import 'package:baocode/kernel/antigravity/antigravity_cli.dart';
-import 'package:baocode/kernel/antigravity/antigravity_transport.dart';
+import 'package:baocode/kernel/codebuddy/codebuddy_cli.dart';
+import 'package:baocode/kernel/codebuddy/codebuddy_transport.dart';
 import 'package:baocode/kernel/claude_code/claude_code_transport.dart';
 import 'package:baocode/kernel/claude_code/claude_core_setting.dart';
 import 'package:baocode/kernel/claude_code/claude_environment.dart';
@@ -17,21 +17,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
-  test('the core: as picked; unset, Antigravity CLI where agy is '
+  test('the core: as picked; unset, CodeBuddy CLI where codebuddy is '
       'installed, else built-in', () {
-    ClaudeCore.antigravityInstalled = () => false;
+    ClaudeCore.codebuddyInstalled = () => false;
     expect(ClaudeCore.parse(null), ClaudeCore.builtin);
     expect(ClaudeCore.parse('builtin'), ClaudeCore.builtin);
-    expect(ClaudeCore.parse('antigravity'), ClaudeCore.antigravity);
+    expect(ClaudeCore.parse('codebuddy'), ClaudeCore.codebuddy);
     expect(ClaudeCore.parse('nonsense'), ClaudeCore.builtin);
     expect(ClaudeCore.parse(true), ClaudeCore.builtin);
 
-    ClaudeCore.antigravityInstalled = () => true;
-    addTearDown(() => ClaudeCore.antigravityInstalled = () => false);
-    expect(ClaudeCore.parse(null), ClaudeCore.antigravity);
-    expect(ClaudeCore.parse('nonsense'), ClaudeCore.antigravity);
+    ClaudeCore.codebuddyInstalled = () => true;
+    addTearDown(() => ClaudeCore.codebuddyInstalled = () => false);
+    expect(ClaudeCore.parse(null), ClaudeCore.codebuddy);
+    expect(ClaudeCore.parse('nonsense'), ClaudeCore.codebuddy);
     expect(ClaudeCore.parse('builtin'), ClaudeCore.builtin);
-    expect(ClaudeCore.parse('antigravity'), ClaudeCore.antigravity);
+    expect(ClaudeCore.parse('codebuddy'), ClaudeCore.codebuddy);
   });
 
   group('what runs a session here', () {
@@ -39,13 +39,13 @@ void main() {
     late String cwd;
 
     setUp(() {
-      root = Directory.systemTemp.createTempSync('ayte-core-');
+      root = Directory.systemTemp.createTempSync('cyte-core-');
       cwd = p.join(root.resolveSymbolicLinksSync(), 'project');
       Directory(cwd).createSync();
-      final fake = File(p.join(root.path, 'agy'))
+      final fake = File(p.join(root.path, 'codebuddy'))
         ..writeAsStringSync('#!/bin/sh\nexit 0\n');
       Process.runSync('chmod', ['+x', fake.path]);
-      AntigravityPathSetting.current = () => fake.path;
+      CodeBuddyPathSetting.current = () => fake.path;
       NetworkProxy.instance.follow(
         ValueNotifier(0),
         (key) => key == ProxyMode.settingKey ? ProxyMode.off.value : null,
@@ -53,7 +53,7 @@ void main() {
     });
 
     tearDown(() {
-      AntigravityPathSetting.current = () => null;
+      CodeBuddyPathSetting.current = () => null;
       ClaudeCore.current = () => ClaudeCore.fallback;
       ClaudeEnvironment.use(null);
       root.deleteSync(recursive: true);
@@ -84,7 +84,7 @@ void main() {
       );
     });
 
-    test('the built-in core on none: tells user to add a provider or use agy', () async {
+    test('the built-in core on none: tells user to add a provider or use CodeBuddy CLI', () async {
       environment(key: 'sk-user');
       ClaudeCore.current = () => ClaudeCore.builtin;
       await expectLater(
@@ -93,16 +93,16 @@ void main() {
           isA<ClaudeUnavailable>().having(
             (error) => error.message,
             'message',
-            allOf(contains('Settings → Models'), contains('Antigravity CLI')),
+            allOf(contains('Settings → Models'), contains('CodeBuddy CLI')),
           ),
         ),
       );
     });
 
-    test('Antigravity CLI picked: starts AntigravityTransport', () async {
+    test('CodeBuddy CLI picked: starts CodeBuddyTransport', () async {
       environment();
-      ClaudeCore.current = () => ClaudeCore.antigravity;
-      expect(await start(), isA<AntigravityTransport>());
+      ClaudeCore.current = () => ClaudeCore.codebuddy;
+      expect(await start(), isA<CodeBuddyTransport>());
     });
   });
 }

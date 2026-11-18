@@ -22,8 +22,7 @@ import '../../usage/claude_usage_meter.dart';
 import '../../usage/usage_ledger.dart';
 import '../../workspace/editor_launcher.dart' show openExternal;
 import '../agent_kernel.dart';
-import '../antigravity/antigravity_cli.dart';
-import '../antigravity/antigravity_transport.dart' show AntigravityTransport;
+import '../codebuddy/codebuddy_cli.dart';
 import '../commit_attribution.dart';
 import '../extension_switches.dart';
 import '../kernel_event.dart';
@@ -159,18 +158,18 @@ class ClaudeCodeKernel
     final rawInitialModel = settings[KernelChoiceKind.model.name];
     _hasExplicitSessionModel = settings['__explicitSessionModel'] == '1';
     _model = rawInitialModel;
-    String? legacyAgyEffort;
-    if (AntigravityModels.parseVariant(rawInitialModel) case final parsed?) {
-      _model = modelRef(antigravityBuiltinProviderId, parsed.model.id);
-      legacyAgyEffort = parsed.effort;
-    } else if (descriptor.id == antigravityBuiltinProviderId &&
+    String? legacyCbcEffort;
+    if (CodeBuddyModels.parseVariant(rawInitialModel) case final parsed?) {
+      _model = modelRef(codebuddyBuiltinProviderId, parsed.model.id);
+      legacyCbcEffort = parsed.effort;
+    } else if (descriptor.id == codebuddyBuiltinProviderId &&
         _providers.resolve(_model) == null) {
       _model = modelRef(
-        antigravityBuiltinProviderId,
-        AntigravityModels.current.first.id,
+        codebuddyBuiltinProviderId,
+        CodeBuddyModels.current.first.id,
       );
     }
-    _effort = settings[KernelChoiceKind.effort.name] ?? legacyAgyEffort;
+    _effort = settings[KernelChoiceKind.effort.name] ?? legacyCbcEffort;
     _window = switch (parseTokens(
       settings[KernelChoiceKind.context.name] ?? '',
     )) {
@@ -186,9 +185,9 @@ class ClaudeCodeKernel
       } else if (key.startsWith(contexts)) {
         if (parseTokens(value) case final tokens? when tokens > 0) {
           final targetModel = key.substring(contexts.length);
-          final agy = AntigravityModels.of(targetModel);
-          _pickedWindows[targetModel] = agy != null
-              ? agy.resolveContextWindow(tokens)
+          final cbc = CodeBuddyModels.of(targetModel);
+          _pickedWindows[targetModel] = cbc != null
+              ? cbc.resolveContextWindow(tokens)
               : tokens;
         }
       } else if (key.startsWith(speeds)) {
@@ -198,15 +197,15 @@ class ClaudeCodeKernel
     if (_effort != null && _model != null) {
       _pickedEfforts.putIfAbsent(_model!, () => _effort!);
     }
-    if (AntigravityModels.of(_model) case final agy?) {
-      final ref = modelRef(antigravityBuiltinProviderId, agy.id);
+    if (CodeBuddyModels.of(_model) case final cbc?) {
+      final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
       if (_effort != null) {
         _pickedEfforts.putIfAbsent(ref, () => _effort!);
       }
-      if (_window case final w? when w > 0 && agy.contextOptions.length > 1) {
-        _pickedWindows.putIfAbsent(ref, () => agy.resolveContextWindow(w));
+      if (_window case final w? when w > 0 && cbc.contextOptions.length > 1) {
+        _pickedWindows.putIfAbsent(ref, () => cbc.resolveContextWindow(w));
       }
-      _contextWindow = _agyWindowFor(agy, ref);
+      _contextWindow = _cbcWindowFor(cbc, ref);
       _contextReported = true;
     }
     if (_model case final model? when !_pickedFast.containsKey(model)) {
@@ -401,22 +400,22 @@ class ClaudeCodeKernel
   /// if offered there, else to the first upstream's.
   String? get _model {
     final picked = _pickedModel;
-    if (AntigravityModels.of(picked) case final agy?
-        when _providers.antigravityOffered) {
-      return modelRef(antigravityBuiltinProviderId, agy.id);
+    if (CodeBuddyModels.of(picked) case final cbc?
+        when _providers.codebuddyOffered) {
+      return modelRef(codebuddyBuiltinProviderId, cbc.id);
     }
     if (_providers.resolve(picked) != null) return picked;
-    if (ClaudeCore.current() == ClaudeCore.antigravity &&
-        _providers.antigravityOffered) {
+    if (ClaudeCore.current() == ClaudeCore.codebuddy &&
+        _providers.codebuddyOffered) {
       return modelRef(
-        antigravityBuiltinProviderId,
-        AntigravityModels.current.first.id,
+        codebuddyBuiltinProviderId,
+        CodeBuddyModels.current.first.id,
       );
     }
-    if (_providers.antigravityOffered && _providers.firstModel == null) {
+    if (_providers.codebuddyOffered && _providers.firstModel == null) {
       return modelRef(
-        antigravityBuiltinProviderId,
-        AntigravityModels.current.first.id,
+        codebuddyBuiltinProviderId,
+        CodeBuddyModels.current.first.id,
       );
     }
     return _providers.firstModel;
@@ -604,16 +603,16 @@ class ClaudeCodeKernel
   ({String provider, String? model, String? effort}) get _launchTarget {
     final custom = _custom;
     if (custom == null &&
-        (AntigravityModels.isAntigravityModel(_model) ||
-            descriptor.id == antigravityBuiltinProviderId ||
-            ClaudeCore.current() == ClaudeCore.antigravity)) {
-      final agy =
-          AntigravityModels.of(_model) ?? AntigravityModels.current.first;
-      final ref = modelRef(antigravityBuiltinProviderId, agy.id);
+        (CodeBuddyModels.isCodeBuddyModel(_model) ||
+            descriptor.id == codebuddyBuiltinProviderId ||
+            ClaudeCore.current() == ClaudeCore.codebuddy)) {
+      final cbc =
+          CodeBuddyModels.of(_model) ?? CodeBuddyModels.current.first;
+      final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
       return (
-        provider: antigravityBuiltinProviderId,
+        provider: codebuddyBuiltinProviderId,
         model: ref,
-        effort: _agyEffortFor(agy, ref),
+        effort: _cbcEffortFor(cbc, ref),
       );
     }
     final effort = switch (custom) {
@@ -944,7 +943,7 @@ class ClaudeCodeKernel
     if (!_running) return;
     final otherProvider = _providerKey != _launchedProvider;
     if (!otherProvider &&
-        _providerKey == antigravityBuiltinProviderId &&
+        _providerKey == codebuddyBuiltinProviderId &&
         _autocompact != null) {
       _launchedWindow = _autocompact;
       return;
@@ -2025,6 +2024,20 @@ class ClaudeCodeKernel
           commands: _commandsFrom(message['commands']),
         );
         emitInfoChanged();
+      case 'system' when message['subtype'] == 'usage_update':
+        if (message['_meta'] case {
+          'codebuddy.ai/turnUsage': {
+            'total': {'usage': final Map<Object?, Object?> u},
+          },
+        }) {
+          final input =
+              (claudeInt(u['inputTokens']) ?? 0) +
+              (claudeInt(u['outputTokens']) ?? 0);
+          if (input > 0 && input != _toldContext) {
+            _toldContext = input;
+            _reportContext();
+          }
+        }
       case 'assistant':
         final told = _toldContext;
         if (_countRequest(message)) _reportStats();
@@ -2834,12 +2847,9 @@ class ClaudeCodeKernel
   void _reportContext() {
     final counted = _counted;
     if (counted == null) {
-      if (!AntigravityModels.isAntigravityModel(_model)) return;
+      if (!CodeBuddyModels.isCodeBuddyModel(_model)) return;
       final used = _toldContext ?? 0;
-      final categories = AntigravityTransport.buildContextCategories(
-        used,
-        _contextWindow,
-      );
+      final free = math.max(0, _contextWindow - used);
       emit(
         UsageReported(
           nextSeq,
@@ -2847,14 +2857,8 @@ class ClaudeCodeKernel
             window: _contextWindow,
             used: used,
             segments: [
-              for (final raw in categories)
-                ContextSegment(
-                  '${raw['name']}',
-                  raw['tokens'] as int,
-                  kind: raw['kind'] == 'free'
-                      ? ContextKind.free
-                      : ContextKind.used,
-                ),
+              if (used > 0) ContextSegment('Messages', used),
+              ContextSegment('Free space', free, kind: ContextKind.free),
             ],
             detail: _shownDetail,
           ),
@@ -3056,12 +3060,9 @@ class ClaudeCodeKernel
       for (final line in page.entries) {
         if (line['type'] == 'assistant') {
           counted |= _countRequest(line);
-          final uuid = '${line['uuid'] ?? ''}';
-          if (!uuid.startsWith('agy-import-')) {
-            if (line['message'] case {'model': final String m}
-                when m.trim().isNotEmpty) {
-              lastHistoryModel = m.trim();
-            }
+          if (line['message'] case {'model': final String m}
+              when m.trim().isNotEmpty) {
+            lastHistoryModel = m.trim();
           }
         }
         _results.add(line);
@@ -3082,26 +3083,6 @@ class ClaudeCodeKernel
       }
       _readHead = _translator.head;
       _translator.endReplay();
-      if (AntigravityModels.isAntigravityModel(_model)) {
-        final brain = AntigravityTransport.readBrainContextTokens(session.id);
-        if (brain != null && brain.contextTokens > 0) {
-          _toldContext = brain.contextTokens;
-          if (!counted) {
-            final reqId = 'agy-brain-${session.id}';
-            _lastRequest = reqId;
-            _lastModel = _model;
-            if (brain.cacheReadTokens > 0) {
-              _cachingModels.add(_model);
-            }
-            _requests[reqId] = CacheTokens(
-              read: brain.cacheReadTokens,
-              written: 0,
-              uncached: math.max(0, brain.inputTokens - brain.cacheReadTokens),
-            );
-            counted = true;
-          }
-        }
-      }
       if (counted) _reportStats();
       _reportContext();
     } on Object catch (error) {
@@ -3125,14 +3106,14 @@ class ClaudeCodeKernel
   /// actually used on its latest assistant turn when the user has not
   /// explicitly pinned a different model for this session.
   void _restoreModelFromHistory(String rawModel) {
-    if (AntigravityModels.parseVariant(rawModel) case final parsed?) {
-      final ref = modelRef(antigravityBuiltinProviderId, parsed.model.id);
+    if (CodeBuddyModels.parseVariant(rawModel) case final parsed?) {
+      final ref = modelRef(codebuddyBuiltinProviderId, parsed.model.id);
       _model = ref;
       if (parsed.effort != null && !_pickedEfforts.containsKey(ref)) {
         _pickedEfforts[ref] = parsed.effort!;
       }
-      _effort = _agyEffortFor(parsed.model, ref);
-      _window = _agyWindowFor(parsed.model, ref);
+      _effort = _cbcEffortFor(parsed.model, ref);
+      _window = _cbcWindowFor(parsed.model, ref);
       _contextWindow = _window!;
       _contextReported = true;
       return;
@@ -3348,15 +3329,15 @@ class ClaudeCodeKernel
   /// What a session on [model] is started on: '' for Claude Code as the
   /// user set it up, else the provider and its setup.
   String _providerKeyOf(String? model) {
-    if (AntigravityModels.isAntigravityModel(model)) {
-      return antigravityBuiltinProviderId;
+    if (CodeBuddyModels.isCodeBuddyModel(model)) {
+      return codebuddyBuiltinProviderId;
     }
     return switch (_providers.resolve(model)) {
       (final provider, _) => '${provider.id}|${provider.launchFingerprint}',
       null =>
-        descriptor.id == antigravityBuiltinProviderId ||
-                ClaudeCore.current() == ClaudeCore.antigravity
-            ? antigravityBuiltinProviderId
+        descriptor.id == codebuddyBuiltinProviderId ||
+                ClaudeCore.current() == ClaudeCore.codebuddy
+            ? codebuddyBuiltinProviderId
             : '',
     };
   }
@@ -3405,11 +3386,11 @@ class ClaudeCodeKernel
     }
   }
 
-  /// The heading Antigravity CLI's own models are listed under.
-  static final _antigravityGroup = KernelOptionGroup(
-    antigravityBuiltinProviderId,
-    'Antigravity CLI',
-    iconBuilder: _providerIcon(antigravityBuiltinProviderId),
+  /// The heading CodeBuddy CLI's own models are listed under.
+  static final _codebuddyGroup = KernelOptionGroup(
+    codebuddyBuiltinProviderId,
+    'CodeBuddy CLI',
+    iconBuilder: _providerIcon(codebuddyBuiltinProviderId),
   );
 
   /// Provider [id]'s icon, as its models' heading shows it.
@@ -3447,19 +3428,19 @@ class ClaudeCodeKernel
         : _pickedWindows[id] == null
         ? _variantOf(id)
         : _variantFor(id, long: _window! > _windows['200k']!);
-    if (sameProvider && AntigravityModels.of(id) != null) {
-      final agy = AntigravityModels.of(id)!;
-      final ref = modelRef(antigravityBuiltinProviderId, agy.id);
+    if (sameProvider && CodeBuddyModels.of(id) != null) {
+      final cbc = CodeBuddyModels.of(id)!;
+      final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
       _model = ref;
-      final effort = _agyEffortFor(agy, ref, active: false);
-      final window = _agyWindowFor(agy, ref);
+      final effort = _cbcEffortFor(cbc, ref, active: false);
+      final window = _cbcWindowFor(cbc, ref);
       _effort = effort;
       _window = window;
       _contextWindow = window;
       _contextReported = true;
       _appliedEffort = effort;
       _change([
-        ('set_model', {'model': agy.id}),
+        ('set_model', {'model': cbc.id}),
         (
           'apply_flag_settings',
           {
@@ -3529,8 +3510,8 @@ class ClaudeCodeKernel
     if (current == null) return;
     if (effort.selected case final level?) _pickedEfforts[current] = level;
     if (_custom != null) return;
-    if (AntigravityModels.of(current) case final agy?) {
-      if (agy.contextOptions.length > 1) {
+    if (CodeBuddyModels.of(current) case final cbc?) {
+      if (cbc.contextOptions.length > 1) {
         if (parseTokens(contextSize.selected ?? '') case final window?
             when window > 0) {
           _pickedWindows[current] = window;
@@ -3567,8 +3548,8 @@ class ClaudeCodeKernel
     ],
   }.toList();
 
-  /// The efforts Claude Code itself takes (`--effort`, `effortLevel`).
-  static const _cliEfforts = {'low', 'medium', 'high', 'xhigh', 'max'};
+  /// The efforts Claude Code / CodeBuddy itself takes (`--effort`, `effortLevel`).
+  static const _cliEfforts = {'minimal', 'low', 'medium', 'high', 'xhigh', 'max'};
 
   /// The effort a provider's model is on: the one picked, if it offers
   /// it, else its own.
@@ -3583,28 +3564,28 @@ class ClaudeCodeKernel
     _ => info.initialContext,
   };
 
-  int _agyWindowFor(AntigravityModel agy, String ref) =>
-      agy.resolveContextWindow(_pickedWindows[ref]);
+  int _cbcWindowFor(CodeBuddyModel cbc, String ref) =>
+      cbc.resolveContextWindow(_pickedWindows[ref]);
 
-  String? _agyEffortFor(
-    AntigravityModel agy,
+  String? _cbcEffortFor(
+    CodeBuddyModel cbc,
     String ref, {
     bool active = true,
   }) {
-    if (agy.effortLevels.isEmpty) return null;
+    if (cbc.effortLevels.isEmpty) return null;
     final candidate =
-        _pickedEfforts[ref] ?? (active ? _effort : null) ?? agy.defaultEffort;
-    return agy.effortLevels.contains(candidate) ? candidate : agy.defaultEffort;
+        _pickedEfforts[ref] ?? (active ? _effort : null) ?? cbc.defaultEffort;
+    return cbc.effortLevels.contains(candidate) ? candidate : cbc.defaultEffort;
   }
 
   /// The context the session compacts at: a provider's model's, else as
   /// picked (null for the CLI's own).
   int? get _autocompact => switch (_custom) {
     (_, final info) => _windowFor(info),
-    null => switch (AntigravityModels.of(_model)) {
-      final agy? => _agyWindowFor(
-        agy,
-        modelRef(antigravityBuiltinProviderId, agy.id),
+    null => switch (CodeBuddyModels.of(_model)) {
+      final cbc? => _cbcWindowFor(
+        cbc,
+        modelRef(codebuddyBuiltinProviderId, cbc.id),
       ),
       null => _window,
     },
@@ -3628,22 +3609,22 @@ class ClaudeCodeKernel
     if (_providers.resolve(model) case (_, final info)) {
       return info.effortLevels;
     }
-    if (AntigravityModels.of(model) case final agy?) {
-      return agy.effortLevels;
+    if (CodeBuddyModels.of(model) case final cbc?) {
+      return cbc.effortLevels;
     }
     if (parseModelRef(model) != null) return const [];
     return _variantOf(model)?.effortLevels ?? const [];
   }
 
-  List<KernelOption> _antigravityModelOptions() => [
-    for (final m in AntigravityModels.current)
+  List<KernelOption> _codebuddyModelOptions() => [
+    for (final m in CodeBuddyModels.current)
       KernelOption(
-        modelRef(antigravityBuiltinProviderId, m.id),
+        modelRef(codebuddyBuiltinProviderId, m.id),
         m.label,
         Icons.rocket_launch_rounded,
         m.description,
-        group: _antigravityGroup,
-        iconBuilder: _modelIcon(antigravityBuiltinProviderId, m.id),
+        group: _codebuddyGroup,
+        iconBuilder: _modelIcon(codebuddyBuiltinProviderId, m.id),
       ),
   ];
 
@@ -3651,14 +3632,14 @@ class ClaudeCodeKernel
   late final KernelChoiceSource model = _Choice(
     options: () {
       final providers = _providers.enabled;
-      final preferAntigravity =
-          ClaudeCore.current() == ClaudeCore.antigravity;
-      final includeAntigravity = _providers.antigravityOffered;
+      final preferCodeBuddy =
+          ClaudeCore.current() == ClaudeCore.codebuddy;
+      final includeCodeBuddy = _providers.codebuddyOffered;
       return [
-        if (preferAntigravity && includeAntigravity)
-          ..._antigravityModelOptions(),
-        if (!preferAntigravity && includeAntigravity)
-          ..._antigravityModelOptions(),
+        if (preferCodeBuddy && includeCodeBuddy)
+          ..._codebuddyModelOptions(),
+        if (!preferCodeBuddy && includeCodeBuddy)
+          ..._codebuddyModelOptions(),
         for (final provider in providers)
           for (final info in provider.enabledModels)
             KernelOption(
@@ -3681,13 +3662,13 @@ class ClaudeCodeKernel
     },
     selected: () {
       if (_custom != null) return _model;
-      if (AntigravityModels.isAntigravityModel(_model)) {
-        final bare = AntigravityModels.bareModelId(_model);
-        return modelRef(antigravityBuiltinProviderId, bare);
+      if (CodeBuddyModels.isCodeBuddyModel(_model)) {
+        final bare = CodeBuddyModels.bareModelId(_model);
+        return modelRef(codebuddyBuiltinProviderId, bare);
       }
-      if (_providers.antigravityOffered) {
-        final bare = AntigravityModels.bareModelId(_reportedModel ?? _model);
-        return modelRef(antigravityBuiltinProviderId, bare);
+      if (_providers.codebuddyOffered) {
+        final bare = CodeBuddyModels.bareModelId(_reportedModel ?? _model);
+        return modelRef(codebuddyBuiltinProviderId, bare);
       }
       return null;
     },
@@ -3727,16 +3708,16 @@ class ClaudeCodeKernel
             ),
         ];
       }
-      if (AntigravityModels.of(model) case final agy?
-          when agy.contextOptions.isNotEmpty) {
-        final fixed = agy.contextOptions.length == 1;
+      if (CodeBuddyModels.of(model) case final cbc?
+          when cbc.contextOptions.isNotEmpty) {
+        final fixed = cbc.contextOptions.length == 1;
         return [
-          for (final tokens in agy.contextOptions)
+          for (final tokens in cbc.contextOptions)
             KernelOption(
               '$tokens',
               fixed ? '${formatTokens(tokens)}（官方固定）' : formatTokens(tokens),
               Icons.notes_rounded,
-              agy.contextOptionDescription(tokens),
+              cbc.contextOptionDescription(tokens),
             ),
         ];
       }
@@ -3751,9 +3732,9 @@ class ClaudeCodeKernel
     },
     selected: () {
       if (_custom case (_, final info)) return '${_windowFor(info)}';
-      if (AntigravityModels.of(_model) case final agy?) {
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
-        return '${_agyWindowFor(agy, ref)}';
+      if (CodeBuddyModels.of(_model) case final cbc?) {
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
+        return '${_cbcWindowFor(cbc, ref)}';
       }
       // Shown as picked until the process restarts with it, as the next
       // message is sent.
@@ -3773,9 +3754,9 @@ class ClaudeCodeKernel
         final picked = _pickedWindows[model];
         return '${info.contextOptions.contains(picked) ? picked : info.initialContext}';
       }
-      if (AntigravityModels.of(model) case final agy?) {
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
-        return '${_agyWindowFor(agy, ref)}';
+      if (CodeBuddyModels.of(model) case final cbc?) {
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
+        return '${_cbcWindowFor(cbc, ref)}';
       }
       final window = _pickedWindows[model] ?? _window;
       return _windows.entries
@@ -3798,11 +3779,11 @@ class ClaudeCodeKernel
         }
         return;
       }
-      if (AntigravityModels.of(model) case final agy?) {
+      if (CodeBuddyModels.of(model) case final cbc?) {
         final rawTokens = parseTokens(id);
         if (rawTokens == null || rawTokens <= 0) return;
-        final tokens = agy.resolveContextWindow(rawTokens);
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
+        final tokens = cbc.resolveContextWindow(rawTokens);
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
         _window = _pickedWindows[ref] = tokens;
         _contextWindow = tokens;
         _contextReported = true;
@@ -4035,6 +4016,7 @@ class ClaudeCodeKernel
           Icons.speed_rounded,
           switch (level) {
             'none' => 'No thinking',
+            'minimal' => 'Minimal thinking',
             'low' => 'Fastest, least thinking',
             'medium' => 'Balanced',
             'high' => 'Thinks more',
@@ -4046,9 +4028,9 @@ class ClaudeCodeKernel
     ],
     selected: () {
       if (_custom case (_, final info)) return _effortFor(info);
-      if (AntigravityModels.of(_model) case final agy?) {
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
-        return _agyEffortFor(agy, ref);
+      if (CodeBuddyModels.of(_model) case final cbc?) {
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
+        return _cbcEffortFor(cbc, ref);
       }
       final levels = _currentModel?.effortLevels ?? const <String>[];
       final effort = _running ? _appliedEffort : _effort;
@@ -4060,9 +4042,9 @@ class ClaudeCodeKernel
       if (_providers.resolve(model) case (_, final info)) {
         return info.effortLevels.contains(level) ? level : info.initialEffort;
       }
-      if (AntigravityModels.of(model) case final agy?) {
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
-        return _agyEffortFor(agy, ref, active: false);
+      if (CodeBuddyModels.of(model) case final cbc?) {
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
+        return _cbcEffortFor(cbc, ref, active: false);
       }
       return _effortLevelsOf(model).contains(level) ? level : null;
     },
@@ -4095,9 +4077,9 @@ class ClaudeCodeKernel
         ]);
         return;
       }
-      if (AntigravityModels.of(model) case final agy?) {
-        if (!agy.effortLevels.contains(id)) return;
-        final ref = modelRef(antigravityBuiltinProviderId, agy.id);
+      if (CodeBuddyModels.of(model) case final cbc?) {
+        if (!cbc.effortLevels.contains(id)) return;
+        final ref = modelRef(codebuddyBuiltinProviderId, cbc.id);
         _pickedEfforts[ref] = id;
         _effort = _appliedEffort = id;
         if (ref != _model || _providerKeyOf(ref) != _onProvider) {
@@ -4105,7 +4087,7 @@ class ClaudeCodeKernel
           return;
         }
         _change([
-          ('set_model', {'model': agy.id}),
+          ('set_model', {'model': cbc.id}),
           (
             'apply_flag_settings',
             {

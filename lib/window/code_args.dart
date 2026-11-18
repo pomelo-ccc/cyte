@@ -264,7 +264,9 @@ abstract final class FileLink {
   /// link, or names no absolute path.
   static CodeArgs? parse(String link) {
     final uri = Uri.tryParse(link.trim());
-    if (uri == null || uri.scheme != 'baocode' || uri.host != 'file') {
+    if (uri == null ||
+        (uri.scheme != 'cyte' && uri.scheme != 'baocode') ||
+        uri.host != 'file') {
       return null;
     }
     final String path;

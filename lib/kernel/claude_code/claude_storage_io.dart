@@ -3,24 +3,13 @@ import 'package:path/path.dart' as p;
 
 import '../../platform/data_dir.dart';
 import '../agent_kernel.dart';
-import '../antigravity/antigravity_transport.dart';
 
-/// Claude Code's own record of its sessions on this machine (see
-/// [ClaudeSessions]).
+/// CodeBuddy's session catalog on this machine (`~/.codebuddy/projects/`).
 class ClaudeStorage implements SessionCatalog, MovesSessions {
   const ClaudeStorage({this.configDir, this.tempDir, this.cacheFile});
 
-  /// Where Claude Code keeps its state; by default `BAOCODE_CLAUDE_DATA_PATH`
-  /// as the login shell has it, else `CLAUDE_CONFIG_DIR`, else
-  /// `<home>/.claude`.
   final String? configDir;
-
-  /// Where it keeps what a session's tasks print (`claude-<uid>/`); the
-  /// system's temporary folder by default.
   final String? tempDir;
-
-  /// Where what was made of each session file is kept between runs; in the
-  /// app's cache folder by default.
   final String? cacheFile;
 
   ClaudeSessions get _sessions => ClaudeSessions(
@@ -28,7 +17,7 @@ class ClaudeStorage implements SessionCatalog, MovesSessions {
     tempDir: tempDir,
     cacheFile:
         cacheFile ??
-        p.join(DataDirectory.current.cacheDir, 'claude-sessions.json'),
+        p.join(DataDirectory.current.cacheDir, 'codebuddy-sessions.json'),
   );
 
   @override
@@ -48,11 +37,8 @@ class ClaudeStorage implements SessionCatalog, MovesSessions {
     return all.where((p) => p.path == cwd).firstOrNull?.sessions ?? const [];
   }
 
-  /// What the session [id] kept of its goal (see [ClaudeSessions.goal]).
   Future<List<Map<String, Object?>>> goal(String id) => _sessions.goal(id);
 
-  /// Copies the session [id] into a new one, [into] (see
-  /// [ClaudeSessions.fork]): its file.
   Future<String> fork(
     String id,
     String into, {
@@ -60,36 +46,22 @@ class ClaudeStorage implements SessionCatalog, MovesSessions {
     String? title,
   }) => _sessions.fork(id, into, before: before, title: title);
 
-  /// The session's conversation along the branch it ended on.
   static Future<List<Map<String, Object?>>> read(SessionRecord session) {
-    final path =
-        session.path ??
-        syncAntigravityTranscriptIfNeeded(
-          cwd: session.cwd,
-          sessionId: session.id,
-        );
+    final path = session.path;
     if (path == null) return Future.value(const []);
     return ClaudeSessions.read(path);
   }
 
-  /// Some of it (see [ClaudeSessions.readPage]).
   static Future<ClaudeHistoryPage> readPage(
     SessionRecord session, {
     required int turns,
     String? before,
   }) {
-    final path =
-        session.path ??
-        syncAntigravityTranscriptIfNeeded(
-          cwd: session.cwd,
-          sessionId: session.id,
-        );
+    final path = session.path;
     if (path == null) return Future.value(const ClaudeHistoryPage([]));
     return ClaudeSessions.readPage(path, turns: turns, before: before);
   }
 
-  /// [project] as the kernels list it, its folder and sessions' given by
-  /// [location] (on another machine, see host.dart).
   static ProjectRecord projectRecord(
     ClaudeProjectSummary project, {
     String Function(String path)? location,

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../kernel/antigravity/antigravity_cli.dart';
+import '../kernel/codebuddy/codebuddy_cli.dart';
 import '../models/model_provider.dart';
 import '../models/model_providers.dart';
 import 'jsonc.dart';
@@ -13,14 +13,17 @@ import 'user_settings.dart';
 /// (otherwise in the system's keychain, not in any file).
 abstract final class SettingsTransfer {
   /// What the file says it is, and the shape it has.
-  static const kind = 'ayte-settings';
+  static const kind = 'cyte-settings';
   static const version = 1;
 
   /// The name a file is offered under.
-  static const fileName = 'ayte-settings.json';
+  static const fileName = 'cyte-settings.json';
 
   /// Settings of this computer's alone: not carried.
-  static const machineKeys = {AntigravityPathSetting.settingKey};
+  static const machineKeys = {
+    CodeBuddyPathSetting.settingKey,
+    'claudeCode.path',
+  };
 
   /// The file's text: [settings]' values, [keybindings]' entries and, with
   /// [keys], each upstream's key that [providers] has.

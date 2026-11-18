@@ -48,7 +48,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   setUp(() {
     IdeDiffOptions.instance.reset();
     rootBundle.clear();
-    ClaudeCore.current = () => ClaudeCore.antigravity;
+    ClaudeCore.current = () => ClaudeCore.codebuddy;
     UserMessageStyle.current.value = UserMessageStyle.sticky;
     ShellCommand.debugInstaller = _NoShellCommand();
     ContextMenu.debugInstaller = _NoContextMenu();

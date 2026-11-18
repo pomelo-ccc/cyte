@@ -47,32 +47,32 @@ fi
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 
-mkdir -p "$stage/opt/ayte" \
+mkdir -p "$stage/opt/cyte" \
   "$stage/usr/bin" \
   "$stage/usr/share/applications" \
   "$stage/usr/share/icons/hicolor/128x128/apps" \
   "$stage/DEBIAN"
 
-cp -a "$bundle/." "$stage/opt/ayte/"
+cp -a "$bundle/." "$stage/opt/cyte/"
 cp "$root/assets/branding/app_icon.png" \
-  "$stage/usr/share/icons/hicolor/128x128/apps/ayte.png"
+  "$stage/usr/share/icons/hicolor/128x128/apps/cyte.png"
 
-cat > "$stage/usr/bin/ayte" << 'EOF'
+cat > "$stage/usr/bin/cyte" << 'EOF'
 #!/bin/sh
-exec /opt/ayte/baocode "$@"
+exec /opt/cyte/baocode "$@"
 EOF
-chmod 755 "$stage/usr/bin/ayte"
+chmod 755 "$stage/usr/bin/cyte"
 
-cat > "$stage/usr/share/applications/ayte.desktop" << 'EOF'
+cat > "$stage/usr/share/applications/cyte.desktop" << 'EOF'
 [Desktop Entry]
-Name=Ayte
-Comment=Desktop workbench for Google Antigravity
-Exec=ayte %U
-Icon=ayte
+Name=Cyte
+Comment=Desktop workbench for Tencent CodeBuddy
+Exec=cyte %U
+Icon=cyte
 Terminal=false
 Type=Application
 Categories=Development;
-StartupWMClass=dev.ayte.desktop
+StartupWMClass=dev.cyte.desktop
 EOF
 
 # The newest glibc any of its programs and libraries asks for: what it was
@@ -88,21 +88,21 @@ fi
 # libgtk-3-0 is what the engine links. libblkid1 and liblzma5 are the
 # extra libraries Flutter's Linux bundle expects on the system.
 cat > "$stage/DEBIAN/control" << EOF
-Package: ayte
+Package: cyte
 Version: ${marketing}
 Section: devel
 Priority: optional
 Architecture: ${package_arch}
 Depends: libc6 (>= ${glibc}), libgtk-3-0, libblkid1, liblzma5${webkit}
-Maintainer: Ayte <noreply@ayte.dev>
-Homepage: https://github.com/pomelo-ccc/ayte
-Description: Ayte desktop for Linux
- A native desktop workbench and IDE for Google Antigravity.
+Maintainer: Cyte <noreply@cyte.dev>
+Homepage: https://github.com/pomelo-ccc/cyte
+Description: Cyte desktop for Linux
+ A native desktop workbench and IDE for Tencent CodeBuddy.
 EOF
 
 out="$root/build/installers"
 mkdir -p "$out"
-name="Ayte-${marketing}-linux-${package_arch}${edition}"
+name="Cyte-${marketing}-linux-${package_arch}${edition}"
 dpkg-deb --build --root-owner-group "$stage" "$out/$name.deb"
 tar -C "$bundle" -czf "$out/$name.tar.gz" .
 echo "Wrote $out/$name.deb"

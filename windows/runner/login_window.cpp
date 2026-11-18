@@ -83,7 +83,7 @@ std::wstring TemporaryFolder() {
   wchar_t path[MAX_PATH + 1];
   const DWORD length = ::GetTempPathW(MAX_PATH + 1, path);
   std::wstring folder(path, length);
-  return folder + L"Ayte-Login";
+  return folder + L"Cyte-Login";
 }
 
 }  // namespace

@@ -61,7 +61,7 @@ import 'dart:io';
 /// Where the .app flutter leaves behind goes, and where the disk image is
 /// written. Under build/, which the repository already ignores and flutter
 /// clean already removes.
-const _bundleRelative = 'build/macos/Build/Products/Release/Ayte.app';
+const _bundleRelative = 'build/macos/Build/Products/Release/Cyte.app';
 const _installersRelative = 'build/installers';
 const _symbolsRelative = 'build/symbols';
 
@@ -91,7 +91,7 @@ const _browserHost = 'baocode-browser-host';
 /// failed late still leaves an .app behind that looks complete — these are
 /// what tell the difference.
 const _required = [
-  'Contents/MacOS/Ayte',
+  'Contents/MacOS/Cyte',
   'Contents/Info.plist',
   'Contents/Frameworks/FlutterMacOS.framework',
   'Contents/Frameworks/App.framework',
@@ -104,7 +104,7 @@ const _required = [
   // Finder's context menu (macos/FinderExtension), which Settings → General
   // turns on.
   'Contents/PlugIns/FinderExtension.appex',
-  // What Chrome runs for Ayte's extension (macos/BrowserBridge).
+  // What Chrome runs for Cyte's extension (macos/BrowserBridge).
   'Contents/MacOS/$_browserHost',
   // The server remote projects run on their host (Linux and macOS, x64 and
   // arm64; tool/build_remote_server.dart): which build, and where it is
@@ -240,7 +240,7 @@ Future<void> main(List<String> arguments) async {
   final finishing = <Future<List<File>>>[];
   for (final MapEntry(key: lipoArch, value: arch) in _architectures.entries) {
     _step('Making the $arch app');
-    final app = Directory('${root.path}/$_thinRelative/$arch/Ayte.app');
+    final app = Directory('${root.path}/$_thinRelative/$arch/Cyte.app');
     if (app.parent.existsSync()) app.parent.deleteSync(recursive: true);
     app.parent.createSync(recursive: true);
     await _run('ditto', ['--arch', lipoArch, bundle.path, app.path], root.path);
@@ -252,7 +252,7 @@ Future<void> main(List<String> arguments) async {
 
     _step('Making the $arch disk image');
     final dmg = File(
-      '${installers.path}/Ayte-${version.marketing}-$arch$edition.dmg',
+      '${installers.path}/Cyte-${version.marketing}-$arch$edition.dmg',
     );
     // A window with the app, an arrow and an Applications shortcut to drag
     // it onto, on the background tool/dmg_background.swift draws (the
@@ -261,7 +261,7 @@ Future<void> main(List<String> arguments) async {
     if (dmg.existsSync()) dmg.deleteSync();
     await _run(createDmg, [
       '--volname',
-      'Ayte ${version.marketing}',
+      'Cyte ${version.marketing}',
       '--background',
       '${root.path}/$_dmgBackgroundRelative',
       '--window-size',
@@ -270,11 +270,11 @@ Future<void> main(List<String> arguments) async {
       '--icon-size',
       '128',
       '--icon',
-      'Ayte.app',
+      'Cyte.app',
       '165',
       '145',
       '--hide-extension',
-      'Ayte.app',
+      'Cyte.app',
       '--app-drop-link',
       '495',
       '145',
@@ -314,7 +314,7 @@ Future<void> main(List<String> arguments) async {
     final mb = (file.lengthSync() / (1024 * 1024)).toStringAsFixed(1);
     stdout.writeln('  ${file.path}  ($mb MB)');
   }
-  final base = '${installers.path}/Ayte-${version.marketing}';
+  final base = '${installers.path}/Cyte-${version.marketing}';
   stdout.writeln();
   if (servers.isEmpty) {
     stdout
@@ -372,7 +372,7 @@ Future<List<File>> _finish(
   // permissions and extended attributes, which a framework's signature
   // depends on).
   final zip = File(
-    '${installers.path}/Ayte-$marketing-mac-$arch$edition.zip',
+    '${installers.path}/Cyte-$marketing-mac-$arch$edition.zip',
   );
   if (zip.existsSync()) zip.deleteSync();
   await _run('ditto', [
@@ -577,7 +577,7 @@ String _bundleRemote(Directory remote, Directory target) {
 /// The executables in [app]: its own, the browser's host, the Finder
 /// extension's, and each framework's.
 List<String> _executables(Directory app) => [
-  '${app.path}/Contents/MacOS/Ayte',
+  '${app.path}/Contents/MacOS/Cyte',
   '${app.path}/Contents/MacOS/$_browserHost',
   '${app.path}/Contents/PlugIns/FinderExtension.appex/Contents/MacOS/'
       'FinderExtension',

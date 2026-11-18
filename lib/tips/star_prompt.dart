@@ -37,7 +37,7 @@ class StarPrompt {
   static const conversations = 3;
 
   /// Where the ask takes the user.
-  static final repository = Uri.parse('https://github.com/pomelo-ccc/ayte');
+  static final repository = Uri.parse('https://github.com/pomelo-ccc/cyte');
 
   final Workspace workspace;
   final TipStorage storage;

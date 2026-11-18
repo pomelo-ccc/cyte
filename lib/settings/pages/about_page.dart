@@ -64,7 +64,7 @@ class AboutSettingsPage extends StatelessWidget {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        'Ayte',
+                        'Cyte',
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 17,

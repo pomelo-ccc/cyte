@@ -51,7 +51,7 @@ constexpr unsigned int kStashMinWidth = 380;
 constexpr unsigned int kStashMinHeight = 220;
 
 // Where the main window's word on showing at launch is kept.
-constexpr wchar_t kSettingsKey[] = L"Software\\Ayte";
+constexpr wchar_t kSettingsKey[] = L"Software\\Cyte";
 constexpr wchar_t kMainShownValue[] = L"MainShownAtLaunch";
 // Where the stash's panel was left, and how big (a RECT, in physical
 // pixels of the virtual screen).
@@ -665,7 +665,7 @@ std::optional<int64_t> AppWindows::Create(
   // Made hidden, at the default size, then put in place (in physical
   // pixels, which Create does not take); shown when Flutter focuses it,
   // once it has drawn.
-  if (!window->Create(title.empty() ? L"Ayte" : title,
+  if (!window->Create(title.empty() ? L"Cyte" : title,
                       Win32Window::Point(10, 10),
                       Win32Window::Size(kDefaultWidth, kDefaultHeight))) {
     return std::nullopt;

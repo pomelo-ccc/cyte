@@ -63,7 +63,7 @@ class ModelProviders extends ChangeNotifier {
 
   static const providersKey = 'models.providers';
   static const builtinHiddenKey = 'models.builtin.hidden';
-  static const antigravityHiddenKey = 'models.antigravity.hidden';
+  static const codebuddyHiddenKey = 'models.codebuddy.hidden';
   static const defaultKey = 'models.default';
   static const auxiliaryKey = 'models.auxiliary';
   static const actionsKey = 'models.actions';
@@ -126,21 +126,21 @@ class ModelProviders extends ChangeNotifier {
     return (provider, model);
   }
 
-  /// Legacy built-in Claude Code CLI provider (disabled in Ayte).
+  /// Legacy built-in Claude Code CLI provider (disabled in Cyte).
   bool get builtinHidden => true;
   bool get builtinAvailable => false;
   bool get builtinOffered => false;
 
-  /// Whether Antigravity CLI (`agy`) is hidden from the picker.
-  bool get antigravityHidden => _read(antigravityHiddenKey) == true;
+  /// Whether CodeBuddy CLI (`codebuddy`) is hidden from the picker.
+  bool get codebuddyHidden => _read(codebuddyHiddenKey) == true;
 
-  /// Whether Antigravity CLI (`agy`) is available as a built-in engine.
-  bool get antigravityAvailable =>
+  /// Whether CodeBuddy CLI (`codebuddy`) is available as a built-in engine.
+  bool get codebuddyAvailable =>
       !ChannelSetup.channelBuild &&
-      ClaudeCore.current() == ClaudeCore.antigravity;
+      ClaudeCore.current() == ClaudeCore.codebuddy;
 
-  /// Whether Antigravity CLI (`agy`) is offered in the picker.
-  bool get antigravityOffered => antigravityAvailable && !antigravityHidden;
+  /// Whether CodeBuddy CLI (`codebuddy`) is offered in the picker.
+  bool get codebuddyOffered => codebuddyAvailable && !codebuddyHidden;
 
   /// The model a session on BaoCode's own core starts on when the one
   /// picked is no upstream's: the first of the first upstream turned on;
@@ -157,7 +157,7 @@ class ModelProviders extends ChangeNotifier {
     final String model
         when model.isNotEmpty &&
             (builtinAvailable ||
-                antigravityAvailable ||
+                codebuddyAvailable ||
                 parseModelRef(model) != null) =>
       model,
     _ => null,
@@ -321,8 +321,8 @@ class ModelProviders extends ChangeNotifier {
   Future<void> setBuiltinHidden(bool hidden) =>
       _write(builtinHiddenKey, hidden ? true : null);
 
-  Future<void> setAntigravityHidden(bool hidden) =>
-      _write(antigravityHiddenKey, hidden ? true : null);
+  Future<void> setCodeBuddyHidden(bool hidden) =>
+      _write(codebuddyHiddenKey, hidden ? true : null);
 
   Future<void> setDefaultModel(String? model) => _write(defaultKey, model);
 

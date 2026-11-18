@@ -14,7 +14,7 @@ import 'package:bao_remote/client.dart';
 import 'package:bao_remote/files.dart' show IdeFileNotFoundException;
 
 import '../kernel/agent_kernel.dart';
-import '../kernel/antigravity/antigravity_transport.dart';
+import '../kernel/codebuddy/codebuddy_transport.dart';
 import '../kernel/claude_code/claude_code_transport.dart';
 import '../kernel/claude_code/claude_core_setting.dart';
 import '../kernel/claude_code/claude_haiku.dart';
@@ -26,30 +26,30 @@ import 'ssh_host.dart';
 import 'port_forwards.dart';
 
 /// Starts an agent session where [launch]'s project is: on this machine via
-/// Antigravity CLI (`agy`) or Ayte's built-in core (for custom API upstreams),
-/// or on a remote SSH host via its built-in core.
+/// CodeBuddy CLI (`codebuddy` / `cbc`) or Cyte's built-in core (for custom API
+/// upstreams), or on a remote SSH host via its built-in core.
 Future<ClaudeCodeTransport> startClaude(ClaudeLaunch launch) async {
   final host = RemoteLocation.hostOf(launch.cwd);
   if (host == null) {
-    if (isAntigravityLaunch(launch)) {
-      return startAntigravity(launch);
+    if (isCodeBuddyLaunch(launch)) {
+      return startCodeBuddy(launch);
     }
     return switch (ClaudeCore.current()) {
       ClaudeCore.builtin when launch.env == null => throw const ClaudeNoModel(
         ClaudeCore.noModel,
       ),
       ClaudeCore.builtin => startDartCore(launch),
-      ClaudeCore.antigravity =>
-        launch.env != null ? startDartCore(launch) : startAntigravity(launch),
+      ClaudeCore.codebuddy =>
+        launch.env != null ? startDartCore(launch) : startCodeBuddy(launch),
     };
   }
   return RemoteClaudeTransport.start(SshHosts.instance[host], launch);
 }
 
-/// What runs on [host]: Ayte's built-in core on a configured custom upstream.
+/// What runs on [host]: Cyte's built-in core on a configured custom upstream.
 SshCore remoteCoreOf(String host) => SshCore.builtin;
 
-/// Starts Ayte's built-in core on [host] with [start].
+/// Starts Cyte's built-in core on [host] with [start].
 Future<RemoteProcess> startRemoteCore(
   SshHost host, {
   required bool model,

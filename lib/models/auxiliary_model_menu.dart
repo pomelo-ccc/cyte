@@ -3,17 +3,15 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../ide/ide_menu.dart';
-import '../kernel/antigravity/antigravity_cli.dart';
+import '../kernel/codebuddy/codebuddy_cli.dart';
 import '../l10n/l10n.dart';
 import 'model_provider.dart';
 import 'model_providers.dart';
 
-const _agyFlashRef = '@$antigravityBuiltinProviderId/gemini-3.8-flash';
-const _agyFlashLegacyRef =
-    '@$antigravityBuiltinProviderId/gemini-3.8-flash-low';
+const _cbcFastRef = '@$codebuddyBuiltinProviderId/fast-model';
 
 /// The choices of an auxiliary model, as Settings → Models gives them:
-/// [autoLabel] first (automatic: [auto]), Antigravity CLI Flash when offered,
+/// [autoLabel] first (automatic: [auto]), CodeBuddy CLI Fast when offered,
 /// then each custom provider's models; [current] checked.
 List<IdeMenuEntry> auxiliaryModelEntries(
   AppLocalizations l10n,
@@ -31,11 +29,11 @@ List<IdeMenuEntry> auxiliaryModelEntries(
     onSelected: () => onPick(auto),
   ),
   const IdeMenuSeparator(),
-  if (providers.antigravityOffered)
+  if (providers.codebuddyOffered)
     IdeMenuAction(
-      'Antigravity CLI · Gemini 3.8 Flash',
-      checked: current == _agyFlashRef || current == _agyFlashLegacyRef,
-      onSelected: () => onPick(_agyFlashRef),
+      'CodeBuddy CLI · Fast',
+      checked: current == _cbcFastRef,
+      onSelected: () => onPick(_cbcFastRef),
     ),
   for (final provider in providers.enabled)
     IdeMenuAction(
@@ -59,8 +57,7 @@ String? actionsModelName(AppLocalizations l10n, ModelProviders providers) {
   return switch (value) {
     null => null,
     ModelProviders.followAuxiliary => l10n.aiModelAuxiliary,
-    _agyFlashRef || _agyFlashLegacyRef =>
-      'Antigravity CLI · Gemini 3.8 Flash',
+    _cbcFastRef => 'CodeBuddy CLI · Fast',
     builtinProviderId => l10n.aiModelAuxiliary,
     _ => switch (providers.resolve(value)) {
       (final provider, final model) =>

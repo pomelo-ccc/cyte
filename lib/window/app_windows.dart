@@ -151,8 +151,8 @@ class AppWindow {
     (_, null) => l10n.windowWelcomeTitle,
   };
 
-  /// The title the system shows: `folder — Ayte`.
-  String title(AppLocalizations l10n) => '${label(l10n)} — Ayte';
+  /// The title the system shows: `folder — Cyte`.
+  String title(AppLocalizations l10n) => '${label(l10n)} — Cyte';
 
   /// The folder's name; a remote one's with its host, as VS Code shows
   /// one (`app [SSH: dev]`, `app [WSL: Ubuntu]`).

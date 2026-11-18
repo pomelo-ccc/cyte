@@ -53,10 +53,10 @@ import 'icons/emoji_sheet.dart';
 import 'icons/icon_library.dart';
 import 'icons/icon_storage.dart';
 import 'icons/site_icons.dart';
-import 'kernel/antigravity/antigravity_cli.dart';
-import 'kernel/antigravity/antigravity_transport.dart'
-    if (dart.library.js_interop) 'kernel/antigravity/antigravity_transport_stub.dart'
-    show AntigravityTransport;
+import 'kernel/codebuddy/codebuddy_cli.dart';
+import 'kernel/codebuddy/codebuddy_transport.dart'
+    if (dart.library.js_interop) 'kernel/codebuddy/codebuddy_transport_stub.dart'
+    show CodeBuddyTransport;
 import 'kernel/claude_code/claude_code_kernel.dart';
 import 'kernel/claude_code/claude_core_setting.dart';
 import 'kernel/claude_code/turn_stats_stub.dart'
@@ -409,7 +409,7 @@ Future<void> main(List<String> arguments) async {
       updates: _startUpdates(files),
       diagnostics: DiagnosticsUploader.platform(),
       workspace: workspace,
-      claudeStatus: LocalAntigravity.status,
+      claudeStatus: LocalCodeBuddy.status,
       link: link,
       customizations: customizations,
     );
@@ -544,12 +544,12 @@ void followSettingsFiles(SettingsFiles files) {
       }
     }
   };
-  // Settings → General → Antigravity CLI: custom executable path & core.
-  AntigravityPathSetting.current = () => AntigravityPathSetting.parse(
-    files.settings[AntigravityPathSetting.settingKey],
+  // Settings → General → CodeBuddy CLI: custom executable path & core.
+  CodeBuddyPathSetting.current = () => CodeBuddyPathSetting.parse(
+    files.settings[CodeBuddyPathSetting.settingKey],
   );
-  ClaudeCore.antigravityInstalled = LocalAntigravity.installed;
-  unawaited(LocalAntigravity.lookForInstall());
+  ClaudeCore.codebuddyInstalled = LocalCodeBuddy.installed;
+  unawaited(LocalCodeBuddy.lookForInstall());
   ClaudeCore.current = () =>
       ClaudeCore.parse(files.settings[ClaudeCore.settingKey]);
   ClaudeCore.changes = files.settings;
@@ -879,7 +879,7 @@ class _BaoCodeAppState extends State<BaoCodeApp>
         return AppExitResponse.cancel;
       }
       await Future.wait([
-        AntigravityTransport.stopAll(),
+        CodeBuddyTransport.stopAll(),
         RemoteClaudeTransport.stopAll(),
         stopModelProxy(),
         stopLspProcesses(),
@@ -1036,7 +1036,7 @@ class _BaoCodeAppState extends State<BaoCodeApp>
   /// it shows built anew as its folder changes.
   Widget _app(AppWindow window) => _withoutSemantics(
     MaterialApp(
-      title: 'Ayte',
+      title: 'Cyte',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       themeAnimationDuration: Duration.zero,

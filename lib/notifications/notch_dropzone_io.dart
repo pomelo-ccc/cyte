@@ -32,7 +32,7 @@ abstract final class NotchDropzone {
 
   static String get _prefsPath => p.join(
     Platform.environment['HOME'] ?? Directory.systemTemp.path,
-    '.ayte_notch_prefs.json',
+    '.cyte_notch_prefs.json',
   );
 
   static void _loadPrefs() {
@@ -82,11 +82,11 @@ abstract final class NotchDropzone {
 
     final inboxPath = p.join(
       Directory.systemTemp.path,
-      'ayte_notch_inbox.jsonl',
+      'cyte_notch_inbox.jsonl',
     );
     final statusPath = p.join(
       Directory.systemTemp.path,
-      'kestrel_live_status.json',
+      'cyte_live_status.json',
     );
     try {
       final file = File(inboxPath);
@@ -162,7 +162,7 @@ abstract final class NotchDropzone {
 
       final target = _activeOrUrgentThread(workspace);
       final status = target?.shownStatus ?? ThreadStatus.idle;
-      final title = target?.title ?? 'Ayte';
+      final title = target?.title ?? 'Cyte';
       final session = (target != null && target.isOpen) ? target.session : null;
       final pending = session?.pendingInteraction;
       final needsApproval = pending is ApprovalRequest;

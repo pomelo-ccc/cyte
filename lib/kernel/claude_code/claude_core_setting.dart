@@ -1,26 +1,25 @@
 import 'package:flutter/foundation.dart';
 
-/// Settings → General → Antigravity CLI: what runs an agent session
-/// (`ayte.core` in settings.json).
+/// Settings → General → CodeBuddy CLI: what runs an agent session
+/// (`cyte.core` in settings.json).
 enum ClaudeCore {
-  /// The Antigravity CLI (`agy`), run as a persistent local stream-json
-  /// process using this machine's Google Antigravity sign-in and setup.
-  antigravity,
+  /// Tencent CodeBuddy CLI (`codebuddy` / `cbc`), run as a persistent local
+  /// stream-json process using the active CodeBuddy account or local CLI setup.
+  codebuddy,
 
-  /// Ayte's built-in core, written in Dart (`package:bao_agent`): runs on
+  /// Cyte's built-in core, written in Dart (`package:bao_agent`): runs on
   /// custom API upstreams configured in Settings → Models.
   builtin;
 
-  static const settingKey = 'ayte.core';
+  static const settingKey = 'cyte.core';
 
-  /// Defaults to Antigravity CLI where `agy` is installed on this machine,
-  /// else the built-in core.
-  static ClaudeCore get fallback =>
-      antigravityInstalled() ? antigravity : builtin;
+  /// Defaults to CodeBuddy CLI where `codebuddy` / `cbc` is installed on this
+  /// machine, else the built-in core.
+  static ClaudeCore get fallback => codebuddyInstalled() ? codebuddy : builtin;
 
-  /// Whether Antigravity CLI (`agy`) is on this machine; `main()` points it
-  /// at `LocalAntigravity.installed`.
-  static bool Function() antigravityInstalled = () => false;
+  /// Whether CodeBuddy CLI (`codebuddy` / `cbc`) is on this machine; `main()`
+  /// points it at `LocalCodeBuddy.installed`.
+  static bool Function() codebuddyInstalled = () => false;
 
   static ClaudeCore parse(Object? setting) =>
       values.where((value) => value.name == setting).firstOrNull ?? fallback;
@@ -35,12 +34,11 @@ enum ClaudeCore {
 
   /// Why [builtin] has nothing to run on: no upstream turned on.
   static const noModel =
-      'No model to run on: Ayte\'s built-in core runs on the custom API '
+      'No model to run on: Cyte\'s built-in core runs on the custom API '
       'providers of Settings → Models. Add one there, or switch the core to '
-      'Antigravity CLI (agy) in Settings → General.';
+      'CodeBuddy CLI (codebuddy / cbc) in Settings → General.';
 }
 
-/// Tells nothing: no settings file to follow.
 class _Never implements Listenable {
   const _Never();
 

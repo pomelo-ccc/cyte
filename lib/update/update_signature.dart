@@ -7,7 +7,7 @@ import 'package:pinenacl/ed25519.dart';
 /// The Ed25519 key releases are signed with: the public half, base64. The
 /// private half is kept off the repository (docs/auto-update.md);
 /// tool/release_manifest.dart signs with it.
-const updatePublicKey = 'yMlK34eFhFNytXLMlbEBfHPBf4r7Hosz7ENFtpPHIyI=';
+const updatePublicKey = 'dSPbzvLURqsFz/0qvjO4im/ZedLk/toAQx+mRbMuR5U=';
 
 /// What a release's signature covers, and checking it. Not the file
 /// itself (a few hundred megabytes, read whole): its SHA-256, which the

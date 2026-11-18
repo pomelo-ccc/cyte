@@ -23,7 +23,7 @@ ContextMenuInstaller? platformContextMenu() {
 /// should the system not have yet.
 class MacContextMenu implements ContextMenuInstaller {
   MacContextMenu({
-    this.extensionId = 'dev.ayte.desktop.FinderExtension',
+    this.extensionId = 'dev.cyte.desktop.FinderExtension',
     String? extensionPath,
     ShellCommandRunner? run,
   }) : extensionPath = extensionPath ?? _bundledExtension(),
@@ -118,7 +118,7 @@ class WindowsContextMenu implements ContextMenuInstaller {
   final ShellCommandRunner _run;
 
   /// The key whose command tells the menu is there.
-  static const _probeKey = r'Software\Classes\Directory\shell\Ayte\command';
+  static const _probeKey = r'Software\Classes\Directory\shell\Cyte\command';
 
   /// The keys, named [labels]: a file's item takes the file (`%1`), a
   /// folder's and its background's the folder (`%V`).
@@ -131,12 +131,12 @@ class WindowsContextMenu implements ContextMenuInstaller {
         (r'Directory\Background', '%V'),
       ]) ...[
         (
-          key: 'Software\\Classes\\$kind\\shell\\Ayte',
+          key: 'Software\\Classes\\$kind\\shell\\Cyte',
           label: labels.agent,
           command: '$app ${CodeArgs.windowsAgentFlag} "$target"',
         ),
         (
-          key: 'Software\\Classes\\$kind\\shell\\AyteFastIde',
+          key: 'Software\\Classes\\$kind\\shell\\CyteFastIde',
           label: labels.ide,
           command: '$app ${CodeArgs.windowsRequestFlag} "$target" -n "$target"',
         ),
