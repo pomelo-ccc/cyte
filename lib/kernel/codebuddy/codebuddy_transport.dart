@@ -140,6 +140,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   static const int _maxStderrLines = 30;
   final Set<String> _initializeRequestIds = {};
   final Set<String> _internalControlIds = {};
+  final List<String> _pendingClientUserUuids = [];
+  final Map<String, String> _clientToCliUserUuid = {};
+  String? _currentTurnClientUuid;
   final Map<
     String,
     ({
@@ -461,6 +464,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       final handled = _handleControlResponse(decoded);
       if (handled == null) return;
       decoded = handled;
+    } else if (type == 'user') {
+      final reconciled = _reconcileUserEcho(decoded);
+      if (reconciled == null) return;
+      decoded = reconciled;
     } else if (type == 'assistant') {
       _observeAssistantUsage(decoded);
     } else if (type == 'system' && decoded['subtype'] == 'usage_update') {
@@ -585,6 +592,104 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     };
   }
 
+  /// Reconciles echoed user messages (`--replay-user-messages`) emitted by
+  /// `codebuddy` (`isReplay: true`, carrying a newly generated UUIDv7) back to
+  /// the client's original `turn.id` UUID, preventing duplicate user bubbles in
+  /// `ChatSession` while keeping tool_result and subagent messages untouched.
+  Map<String, Object?>? _reconcileUserEcho(Map<String, Object?> decoded) {
+    if (decoded['parent_tool_use_id'] != null ||
+        decoded['isMeta'] == true ||
+        decoded['isSynthetic'] == true ||
+        decoded['isCompactSummary'] == true ||
+        decoded['isVisibleInTranscriptOnly'] == true) {
+      return decoded;
+    }
+
+    final body = decoded['message'];
+    var hasVisiblePrompt = false;
+    if (body is Map) {
+      final content = body['content'];
+      if (content is List) {
+        final hasToolResult = content.any(
+          (b) => b is Map && b['type'] == 'tool_result',
+        );
+        if (hasToolResult) return decoded;
+        final visibleTexts = <String>[];
+        var hasImage = false;
+        for (final b in content) {
+          if (b is! Map) continue;
+          final bType = b['type'];
+          if (bType == 'image') {
+            hasImage = true;
+          } else if (bType == 'text' && b['text'] is String) {
+            final t = (b['text'] as String).trimLeft();
+            if (t.isEmpty ||
+                t.startsWith('<system-reminder>') ||
+                t.startsWith('<local-command-caveat>')) {
+              continue;
+            }
+            visibleTexts.add(t);
+          }
+        }
+        final textJoined = visibleTexts.join('\n');
+        if (textJoined.startsWith('<task-notification>') ||
+            textJoined.startsWith('[Request interrupted')) {
+          return decoded;
+        }
+        hasVisiblePrompt = visibleTexts.isNotEmpty || hasImage;
+      } else if (content is String) {
+        final trimmed = content.trimLeft();
+        if (trimmed.startsWith('<task-notification>') ||
+            trimmed.startsWith('[Request interrupted')) {
+          return decoded;
+        }
+        hasVisiblePrompt =
+            trimmed.isNotEmpty &&
+            !trimmed.startsWith('<system-reminder>') &&
+            !trimmed.startsWith('<local-command-caveat>');
+      }
+    }
+
+    if (!hasVisiblePrompt) {
+      return decoded;
+    }
+
+    final cliUuid = decoded['uuid'] as String?;
+    if (cliUuid != null && _pendingClientUserUuids.remove(cliUuid)) {
+      _currentTurnClientUuid = cliUuid;
+      if (!_closed && !_messages.isClosed) {
+        _messages.add({
+          'type': 'command_lifecycle',
+          'command_uuid': cliUuid,
+          'state': 'started',
+        });
+      }
+      return decoded;
+    }
+
+    if (_pendingClientUserUuids.isNotEmpty) {
+      final clientUuid = _pendingClientUserUuids.removeAt(0);
+      _currentTurnClientUuid = clientUuid;
+      if (cliUuid != null && cliUuid.isNotEmpty) {
+        _clientToCliUserUuid[clientUuid] = cliUuid;
+      }
+      if (!_closed && !_messages.isClosed) {
+        _messages.add({
+          'type': 'command_lifecycle',
+          'command_uuid': clientUuid,
+          'state': 'started',
+        });
+      }
+      return {...decoded, 'uuid': clientUuid};
+    }
+
+    if (decoded['isReplay'] == true && _currentTurnClientUuid != null) {
+      return null;
+    }
+
+    return decoded;
+  }
+
   void _observeAssistantUsage(Map<String, Object?> decoded) {
     final msg = decoded['message'];
     if (msg is! Map) return;
@@ -640,6 +745,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
   Map<String, Object?> _onTurnResult(Map<String, Object?> decoded) {
     _turnInFlight = false;
+    _currentTurnClientUuid = null;
     final isError = decoded['is_error'] == true;
     final resultText = '${decoded['result'] ?? ''}'.toLowerCase();
     final quotaExhausted =
@@ -740,6 +846,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       return;
     }
     if (type == 'user') {
+      if (message['uuid'] case final String clientUuid
+          when clientUuid.isNotEmpty) {
+        _pendingClientUserUuids.add(clientUuid);
+      }
       _turnInFlight = true;
       _turnCreditsReported = 0.0;
       _turnTokensReported = 0;
@@ -870,9 +980,32 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           }
         }
         respondSuccess();
-      case 'interrupt':
       case 'rewind':
+      case 'rewind_conversation':
+        final mappedTarget = switch (request['target_message_uuid']) {
+          final String id => _clientToCliUserUuid[id] ?? id,
+          _ => null,
+        };
+        _writeRaw({
+          ...message,
+          'request': {
+            ...request,
+            'target_message_uuid': ?mappedTarget,
+          },
+        });
       case 'rewind_files':
+        final mappedUserMsg = switch (request['user_message_id']) {
+          final String id => _clientToCliUserUuid[id] ?? id,
+          _ => null,
+        };
+        _writeRaw({
+          ...message,
+          'request': {
+            ...request,
+            'user_message_id': ?mappedUserMsg,
+          },
+        });
+      case 'interrupt':
       case 'mcp_message':
       case 'reconnect_mcp':
       case 'steer':
@@ -910,6 +1043,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
         }
         respondSuccess();
       case 'cancel_async_message':
+        if (request['message_uuid'] case final String u) {
+          _pendingClientUserUuids.remove(u);
+        }
         respondSuccess(const {'cancelled': true});
       case 'get_usage':
         respondSuccess(const {'rate_limits_available': false});

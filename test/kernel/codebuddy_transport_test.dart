@@ -227,6 +227,22 @@ with open(seen_path, "a", encoding="utf-8") as log:
                 "subtype": "init",
                 "session_id": "sess-live-001"
             }) + "\\n")
+            # CodeBuddy CLI echoes user message with isReplay: True and its own UUIDv7!
+            sys.stdout.write(json.dumps({
+                "type": "user",
+                "isReplay": True,
+                "uuid": "01a1f180-9999-7000-8000-aaaaaaaaaaaa",
+                "session_id": "sess-live-001",
+                "message": msg.get("message")
+            }) + "\\n")
+            # Even if a second duplicate replay frame arrives, transport must drop it!
+            sys.stdout.write(json.dumps({
+                "type": "user",
+                "isReplay": True,
+                "uuid": "01a1f180-9999-7000-8000-bbbbbbbbbbbb",
+                "session_id": "sess-live-001",
+                "message": msg.get("message")
+            }) + "\\n")
             sys.stdout.write(json.dumps({
                 "type": "system",
                 "subtype": "usage_update",
@@ -313,7 +329,15 @@ with open(seen_path, "a", encoding="utf-8") as log:
       });
       await cfgFuture;
 
-      // 3. user message -> flushes session thoughtLevel + attaches `credits: 0.42` onto result!
+      // 3. user message -> reconciles echoed UUIDv7 back to `u-1` (no duplicate!),
+      // flushes session thoughtLevel, and attaches `credits: 0.42` onto result!
+      final receivedUserUuids = <String>[];
+      final userSub = transport.messages.listen((m) {
+        if (m['type'] == 'user') {
+          receivedUserUuids.add('${m['uuid']}');
+        }
+      });
+      addTearDown(userSub.cancel);
       final resultFuture = transport.messages
           .firstWhere((m) => m['type'] == 'result')
           .timeout(const Duration(seconds: 5));
@@ -328,6 +352,7 @@ with open(seen_path, "a", encoding="utf-8") as log:
         },
       });
       final resultMsg = await resultFuture;
+      expect(receivedUserUuids, ['u-1']);
       expect((resultMsg['credits'] as num?)?.toDouble(), closeTo(0.42, 1e-6));
 
       final seenLines = await seenLog.readAsLines();
