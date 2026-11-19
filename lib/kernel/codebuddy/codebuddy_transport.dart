@@ -124,8 +124,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   String? _sessionId;
   String _model;
   String _permissionMode;
+  String? _pendingPermissionMode;
   String? _effort;
   String? _pendingThoughtLevel;
+  final Set<String> _sessionApprovedTools = {};
   int _maxContextTokens;
   int _lastContextTokens = 0;
   double _turnCreditsReported = 0.0;
@@ -451,6 +453,23 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     });
   }
 
+  void _flushPendingSessionPermissionMode(String sid) {
+    final pending = _pendingPermissionMode;
+    if (pending == null || pending.isEmpty) return;
+    _pendingPermissionMode = null;
+    final internalId = '_cyte_perm_mode_${++_internalSeq}';
+    _internalControlIds.add(internalId);
+    _writeRaw({
+      'type': 'control_request',
+      'request_id': internalId,
+      'request': {
+        'subtype': 'set_permission_mode',
+        'session_id': sid,
+        'mode': pending,
+      },
+    });
+  }
+
   void _onStdoutLine(String line) {
     final trimmed = line.trim();
     if (trimmed.isEmpty) return;
@@ -473,6 +492,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       if (wasEmpty || _pendingThoughtLevel != null) {
         _flushPendingSessionThoughtLevel(sid);
       }
+      if (wasEmpty || _pendingPermissionMode != null) {
+        _flushPendingSessionPermissionMode(sid);
+      }
       if (_pendingCustomTitle case final title?) {
         _pendingCustomTitle = null;
         _appendCustomTitleToTranscript(sid, title);
@@ -490,8 +512,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       return;
     }
     if (type == 'control_request') {
-      if (!_closed && !_messages.isClosed) {
-        _messages.add(decoded);
+      final normalized = _normalizeIncomingControlRequest(decoded);
+      if (normalized != null && !_closed && !_messages.isClosed) {
+        _messages.add(normalized);
       }
       return;
     }
@@ -895,12 +918,150 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     }
   }
 
+  /// Normalizes incoming CLI `control_request`s (`can_use_tool` &
+  /// `elicitation_create`) to match `ClaudeCodeKernel`'s interaction protocol,
+  /// and auto-approves tools the user marked "Always allow" for this session.
+  Map<String, Object?>? _normalizeIncomingControlRequest(
+    Map<String, Object?> decoded,
+  ) {
+    final reqId = decoded['request_id'] as String?;
+    final req = (decoded['request'] as Map?)?.cast<String, Object?>();
+    if (reqId == null || req == null) return decoded;
+    final subtype = req['subtype'] as String?;
+
+    if (subtype == 'elicitation_create') {
+      return {
+        ...decoded,
+        'request': {
+          ...req,
+          'subtype': 'elicitation',
+        },
+      };
+    }
+
+    if (subtype == 'can_use_tool') {
+      final toolName = req['tool_name'] as String?;
+      final input = (req['input'] as Map?)?.cast<String, Object?>() ?? const {};
+      if (toolName != null &&
+          toolName != 'AskUserQuestion' &&
+          toolName != 'ExitPlanMode' &&
+          _sessionApprovedTools.contains(toolName)) {
+        _writeRaw({
+          'type': 'control_response',
+          'response': {
+            'subtype': 'success',
+            'request_id': reqId,
+            'response': {
+              'allowed': true,
+              'behavior': 'allow',
+              'updatedInput': input,
+            },
+          },
+        });
+        return null;
+      }
+
+      if (toolName != null &&
+          toolName != 'AskUserQuestion' &&
+          toolName != 'ExitPlanMode' &&
+          (req['permission_suggestions'] as List? ?? const []).isEmpty) {
+        return {
+          ...decoded,
+          'request': {
+            ...req,
+            'permission_suggestions': [
+              {
+                'type': 'addRules',
+                'behavior': 'allow',
+                'destination': 'session',
+                'rules': [
+                  {'toolName': toolName},
+                ],
+              },
+            ],
+          },
+        };
+      }
+    }
+
+    return decoded;
+  }
+
+  /// Translates `ClaudeCodeKernel`'s `can_use_tool` response (`behavior:
+  /// 'allow' | 'deny'`, `message`) into `@tencent-ai/codebuddy-code`'s
+  /// `SdkPermissionClient` schema (`allowed: true | false`, `reason`), and
+  /// records session-level "Always allow" rules (`updatedPermissions`).
+  Map<String, Object?> _translateOutgoingControlResponse(
+    Map<String, Object?> message,
+  ) {
+    final resp = (message['response'] as Map?)?.cast<String, Object?>();
+    if (resp == null || resp['subtype'] != 'success') return message;
+    final inner = (resp['response'] as Map?)?.cast<String, Object?>();
+    if (inner == null) return message;
+    final behavior = inner['behavior'] as String?;
+    if (behavior == null) return message;
+
+    if (behavior == 'allow') {
+      if (inner['updatedPermissions'] case final List perms) {
+        for (final entry in perms) {
+          if (entry is! Map) continue;
+          if (entry['type'] == 'setMode' &&
+              entry['mode'] == 'bypassPermissions') {
+            _permissionMode = 'bypassPermissions';
+          }
+          if (entry['rules'] case final List rules) {
+            for (final r in rules) {
+              if (r is Map && r['toolName'] is String) {
+                final name = (r['toolName'] as String).trim();
+                if (name.isNotEmpty) _sessionApprovedTools.add(name);
+              }
+            }
+          }
+        }
+      }
+      return {
+        ...message,
+        'response': {
+          ...resp,
+          'response': {
+            ...inner,
+            'allowed': true,
+          },
+        },
+      };
+    }
+
+    if (behavior == 'deny') {
+      final reason =
+          (inner['reason'] as String?) ??
+          (inner['message'] as String?) ??
+          'Permission denied by user';
+      return {
+        ...message,
+        'response': {
+          ...resp,
+          'response': {
+            ...inner,
+            'allowed': false,
+            'reason': reason,
+          },
+        },
+      };
+    }
+
+    return message;
+  }
+
   @override
   void write(Map<String, Object?> message) {
     if (_closed) return;
     final type = message['type'] as String?;
     if (type == 'control_request') {
       _handleControlRequest(message);
+      return;
+    }
+    if (type == 'control_response') {
+      _writeRaw(_translateOutgoingControlResponse(message));
       return;
     }
     if (type == 'user') {
@@ -960,10 +1121,26 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           },
         });
       case 'set_permission_mode':
-        if (request['mode'] case final String mode) {
+        if (request['mode'] case final String mode when mode.isNotEmpty) {
           _permissionMode = mode;
+          if (_sessionId case final sid? when sid.isNotEmpty) {
+            _pendingPermissionMode = null;
+            _writeRaw({
+              'type': 'control_request',
+              'request_id': requestId,
+              'request': {
+                'subtype': 'set_permission_mode',
+                'session_id': sid,
+                'mode': mode,
+              },
+            });
+          } else {
+            _pendingPermissionMode = mode;
+            respondSuccess({'mode': mode});
+          }
+          return;
         }
-        _writeRaw(message);
+        respondSuccess();
       case 'set_model':
         if (request['model'] case final String rawModel) {
           _model = CodeBuddyModels.cliModelIdOf(rawModel);

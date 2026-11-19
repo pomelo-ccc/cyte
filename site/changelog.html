@@ -30,6 +30,21 @@
   <h1>Changelog</h1>
   <p class="subtitle">What changed in each version of BaoCode.</p>
 
+  <section class="release" id="v2.0.6">
+    <h2 class="plain"><a href="#v2.0.6">2.0.6</a></h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li><strong>Fixed Tool Permission Approvals Failing with <code>Permission denied by SDK</code></strong>:
+    <ul>
+    <li>Translates <code>can_use_tool</code> <code>control_response</code> payloads (<code>behavior: 'allow' | 'deny'</code>, <code>message</code>) into CodeBuddy CLI <code>SdkPermissionClient</code>'s required <code>allowed: true | false</code> and <code>reason</code> fields.</li>
+    <li>Injects session-level <code>Always allow &lt;Tool&gt;</code> suggestions on incoming <code>can_use_tool</code> requests and auto-approves subsequent calls in the session once granted.</li>
+    <li>Passes native <code>-y --permission-mode bypassPermissions</code> directly to CodeBuddy CLI in Full Access mode, synchronizes pre-session <code>set_permission_mode</code> changes once <code>session_id</code> is established, and maps <code>elicitation_create</code> control requests.</li>
+    <li>Restores <code>image_blob_ref</code> image attachments when reading historical CodeBuddy <code>.jsonl</code> sessions.</li>
+    </ul>
+    </li>
+    </ul>
+  </section>
+
   <section class="release" id="v2.0.5">
     <h2 class="plain"><a href="#v2.0.5">2.0.5</a></h2>
     <h3>Bug Fixes</h3>

@@ -3978,7 +3978,10 @@ class ClaudeCodeKernel
   /// to unless started allowing it: it accepts edits, and what it asks
   /// about otherwise is approved in [_permission].
   String get _cliApproval =>
-      _approval == 'bypassPermissions' ? 'acceptEdits' : _approval;
+      _approval == 'bypassPermissions' &&
+              _providerKey != codebuddyBuiltinProviderId
+          ? 'acceptEdits'
+          : _approval;
 
   /// What is still asked in full access: the user's own ask rules, tools
   /// that require user interaction, and what a host is told to act on

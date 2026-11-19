@@ -1526,6 +1526,22 @@ Map<String, Object?> _normalizeEntry(Map<String, Object?> entry) {
                 },
               });
             }
+          } else if (bType == 'image_blob_ref' && item['blob_path'] is String) {
+            try {
+              final blobFile = File(item['blob_path'] as String);
+              if (blobFile.existsSync()) {
+                blocks.add({
+                  'type': 'image',
+                  'source': {
+                    'type': 'base64',
+                    'media_type': item['mime'] as String? ?? 'image/png',
+                    'data': base64Encode(blobFile.readAsBytesSync()),
+                  },
+                });
+              }
+            } on Object {
+              // Ignore unreadable historical blob files.
+            }
           } else if (bType == 'image') {
             blocks.add(item.cast<String, Object?>());
           }

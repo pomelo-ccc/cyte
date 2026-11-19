@@ -30,6 +30,21 @@
   <h1>更新日志</h1>
   <p class="subtitle">BaoCode 每个版本的变化。</p>
 
+  <section class="release" id="v2.0.6">
+    <h2 class="plain"><a href="#v2.0.6">2.0.6</a></h2>
+    <h3>问题修复</h3>
+    <ul>
+    <li><strong>彻底修复 CodeBuddy 工具权限审批始终报错 <code>Permission denied by SDK</code></strong>：
+    <ul>
+    <li>将客户端发往 CodeBuddy CLI 的 <code>can_use_tool</code> 审批响应（<code>behavior: 'allow' | 'deny'</code> + <code>message</code>）精准对齐为 <code>SdkPermissionClient</code> 所需的 <code>allowed: true | false</code> + <code>reason</code>，解决点击「允许」或开启「完全访问」时工具仍被拒绝的问题。</li>
+    <li>在「每次询问」模式下自动为工具审批卡片提供「本会话始终允许 <code>&lt;Tool&gt;</code>」选项并持久化会话级白名单，避免重复弹窗。</li>
+    <li>在开启「完全访问（跳过权限）」时直接向 CodeBuddy CLI 下发 <code>-y --permission-mode bypassPermissions</code>，并修复会话尚未建立前切换权限模式的 <code>session_id</code> 延迟同步与 MCP <code>elicitation_create</code> 协议适配。</li>
+    <li>支持读取历史 <code>.jsonl</code> 会话中的 <code>image_blob_ref</code> 图片附件。</li>
+    </ul>
+    </li>
+    </ul>
+  </section>
+
   <section class="release" id="v2.0.5">
     <h2 class="plain"><a href="#v2.0.5">2.0.5</a></h2>
     <h3>问题修复</h3>

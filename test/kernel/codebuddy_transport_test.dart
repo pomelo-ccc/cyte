@@ -692,6 +692,228 @@ for raw in sys.stdin:
       expect(afterFork.first.sessions.map((s) => s.id), contains('01a1f197-forked'));
     },
   );
+
+  test(
+    'CodeBuddyTransport translates can_use_tool allowed/reason responses, remembers session allowAlways, and syncs set_permission_mode',
+    () async {
+      final root = await Directory.systemTemp.createTemp('cyte_cbc_perm_');
+      addTearDown(() async {
+        if (root.existsSync()) await root.delete(recursive: true);
+      });
+      final cwd = p.join(root.path, 'proj')
+        ..also((d) => Directory(d).createSync());
+      final seenLog = File(p.join(root.path, 'perm_seen.jsonl'));
+      final fakeCbc = File(p.join(root.path, 'codebuddy'));
+      await fakeCbc.writeAsString('''#!/usr/bin/env python3
+import json, sys
+
+seen_path = ${jsonEncode(seenLog.path)}
+with open(seen_path, "a", encoding="utf-8") as log:
+    for raw in sys.stdin:
+        line = raw.strip()
+        if not line:
+            continue
+        log.write(line + "\\n")
+        log.flush()
+        msg = json.loads(line)
+        mtype = msg.get("type")
+        if mtype == "control_request":
+            req_id = msg["request_id"]
+            sub = msg["request"]["subtype"]
+            sys.stdout.write(json.dumps({
+                "type": "control_response",
+                "response": {
+                    "subtype": "success",
+                    "request_id": req_id,
+                    "response": {"rawModels": [], "models": []}
+                }
+            }) + "\\n")
+            sys.stdout.flush()
+        elif mtype == "user":
+            sys.stdout.write(json.dumps({
+                "type": "system",
+                "subtype": "init",
+                "session_id": "sess-perm-001"
+            }) + "\\n")
+            # 1st Bash permission check
+            sys.stdout.write(json.dumps({
+                "type": "control_request",
+                "request_id": "perm_1",
+                "request": {
+                    "subtype": "can_use_tool",
+                    "tool_name": "Bash",
+                    "tool_use_id": "call_bash_1",
+                    "input": {"command": "ls -la"}
+                }
+            }) + "\\n")
+            sys.stdout.flush()
+        elif mtype == "control_response":
+            resp = msg.get("response", {})
+            rid = resp.get("request_id")
+            inner = resp.get("response", {})
+            if rid == "perm_1" and inner.get("allowed") is True:
+                # 2nd Bash permission check -> should be auto-approved by session rule!
+                sys.stdout.write(json.dumps({
+                    "type": "control_request",
+                    "request_id": "perm_2",
+                    "request": {
+                        "subtype": "can_use_tool",
+                        "tool_name": "Bash",
+                        "tool_use_id": "call_bash_2",
+                        "input": {"command": "pwd"}
+                    }
+                }) + "\\n")
+                sys.stdout.flush()
+            elif rid == "perm_2" and inner.get("allowed") is True:
+                # 3rd Read permission check -> test deny translation + elicitation_create
+                sys.stdout.write(json.dumps({
+                    "type": "control_request",
+                    "request_id": "elic_1",
+                    "request": {
+                        "subtype": "elicitation_create",
+                        "mode": "form",
+                        "message": "Need input"
+                    }
+                }) + "\\n")
+                sys.stdout.write(json.dumps({
+                    "type": "control_request",
+                    "request_id": "perm_3",
+                    "request": {
+                        "subtype": "can_use_tool",
+                        "tool_name": "Write",
+                        "tool_use_id": "call_write_3",
+                        "input": {"file_path": "/tmp/a.txt", "content": "x"}
+                    }
+                }) + "\\n")
+                sys.stdout.flush()
+            elif rid == "perm_3" and inner.get("allowed") is False:
+                sys.stdout.write(json.dumps({
+                    "type": "result",
+                    "subtype": "success",
+                    "session_id": "sess-perm-001",
+                    "is_error": False,
+                    "result": inner.get("reason", "")
+                }) + "\\n")
+                sys.stdout.flush()
+''');
+      await Process.run('chmod', ['+x', fakeCbc.path]);
+
+      CodeBuddyPathSetting.current = () => fakeCbc.path;
+      addTearDown(() => CodeBuddyPathSetting.current = () => null);
+      ClaudeEnvironment.use({
+        'HOME': root.path,
+        'PATH': Platform.environment['PATH'] ?? '/usr/bin:/bin',
+        ClaudeEnvironment.dataPathVariable: p.join(root.path, '.codebuddy'),
+      });
+      addTearDown(() => ClaudeEnvironment.use(null));
+      NetworkProxy.instance.follow(
+        ValueNotifier(0),
+        (key) => key == ProxyMode.settingKey ? ProxyMode.off.value : null,
+      );
+
+      final transport = await startCodeBuddy(
+        ClaudeLaunch(cwd: cwd, model: '@codebuddy-cli/glm-5.3'),
+      );
+      final controlRequests = <Map<String, Object?>>[];
+      final sub = transport.messages.listen((m) {
+        if (m['type'] == 'control_request') controlRequests.add(m);
+      });
+      addTearDown(() async {
+        await sub.cancel();
+        transport.close();
+        await transport.exited.timeout(const Duration(seconds: 5));
+      });
+
+      // Pre-session set_permission_mode queues until session_id arrives
+      final modeAck = transport.messages
+          .firstWhere(
+            (m) =>
+                m['type'] == 'control_response' &&
+                (m['response'] as Map?)?['request_id'] == 'mode-pre',
+          )
+          .timeout(const Duration(seconds: 5));
+      transport.write({
+        'type': 'control_request',
+        'request_id': 'mode-pre',
+        'request': {'subtype': 'set_permission_mode', 'mode': 'bypassPermissions'},
+      });
+      await modeAck;
+
+      final perm1 = transport.messages
+          .firstWhere(
+            (m) => m['type'] == 'control_request' && m['request_id'] == 'perm_1',
+          )
+          .timeout(const Duration(seconds: 5));
+      transport.write({
+        'type': 'user',
+        'uuid': 'u-perm',
+        'message': {
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': 'run ls'},
+          ],
+        },
+      });
+      final perm1Msg = await perm1;
+      final perm1Req = perm1Msg['request'] as Map;
+      expect(perm1Req['permission_suggestions'], isA<List>());
+      expect((perm1Req['permission_suggestions'] as List), isNotEmpty);
+
+      // Reply with ClaudeCodeKernel's `behavior: 'allow'` + `updatedPermissions` (Always allow Bash)
+      final perm3 = transport.messages
+          .firstWhere(
+            (m) => m['type'] == 'control_request' && m['request_id'] == 'perm_3',
+          )
+          .timeout(const Duration(seconds: 5));
+      transport.write({
+        'type': 'control_response',
+        'response': {
+          'subtype': 'success',
+          'request_id': 'perm_1',
+          'response': {
+            'behavior': 'allow',
+            'updatedInput': {'command': 'ls -la'},
+            'updatedPermissions': perm1Req['permission_suggestions'],
+          },
+        },
+      });
+      await perm3;
+
+      // Verify `perm_2` was auto-approved without reaching UI, and `elic_1` became `elicitation`!
+      expect(controlRequests.any((m) => m['request_id'] == 'perm_2'), isFalse);
+      final elic = controlRequests.singleWhere((m) => m['request_id'] == 'elic_1');
+      expect((elic['request'] as Map)['subtype'], 'elicitation');
+
+      // Deny `perm_3` with ClaudeCodeKernel's `behavior: 'deny'` + `message`
+      final done = transport.messages
+          .firstWhere((m) => m['type'] == 'result')
+          .timeout(const Duration(seconds: 5));
+      transport.write({
+        'type': 'control_response',
+        'response': {
+          'subtype': 'success',
+          'request_id': 'perm_3',
+          'response': {
+            'behavior': 'deny',
+            'message': '不允许写入临时文件',
+          },
+        },
+      });
+      final doneMsg = await done;
+      expect(doneMsg['result'], '不允许写入临时文件');
+
+      final seen = await seenLog.readAsLines();
+      expect(
+        seen.any(
+          (l) =>
+              l.contains('"subtype":"set_permission_mode"') &&
+              l.contains('"session_id":"sess-perm-001"') &&
+              l.contains('"mode":"bypassPermissions"'),
+        ),
+        isTrue,
+      );
+    },
+  );
 }
 
 extension _Also<T> on T {
