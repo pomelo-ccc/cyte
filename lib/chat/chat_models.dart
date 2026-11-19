@@ -77,6 +77,7 @@ class TurnUsage {
     this.outputTokens,
     this.tokensPerSecond,
     this.costUsd,
+    this.credits,
   });
 
   /// Tokens the model read, all its requests together, the prompt cache's
@@ -91,6 +92,9 @@ class TurnUsage {
 
   /// What the turn cost, in dollars.
   final double? costUsd;
+
+  /// CodeBuddy credits consumed by this turn (`codebuddy.ai/turnUsage`).
+  final double? credits;
 
   /// Read and written, when either is known.
   int? get totalTokens => inputTokens == null && outputTokens == null

@@ -835,7 +835,7 @@
   "composerSend": "发送  ↵",
   "composerStop": "停止",
   "composerSettingContext": "上下文",
-  "composerSettingEffort": "推理强度",
+  "composerSettingEffort": "思考强度",
   "composerNoResults": "无结果",
   "stripOpen": "打开 {name}",
   "stripRunningElapsed": "运行中 · {seconds}秒",

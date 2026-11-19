@@ -30,6 +30,7 @@ class CodeBuddyAccounts extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initFuture;
   Timer? _refreshTimer;
+  Timer? _postTurnRefreshTimer;
 
   final List<CodeBuddyAccount> _accounts = [];
   String? _currentAccountId;
@@ -428,8 +429,9 @@ class CodeBuddyAccounts extends ChangeNotifier {
   }
 
   /// Records live credit & token usage reported by `codebuddy` stream-json
-  /// (`codebuddy.ai/turnUsage`), and triggers smart auto-switch if quota is
-  /// exhausted (`429` / `insufficient_quota` / `6005` / `14018`).
+  /// (`codebuddy.ai/turnUsage`), updates remaining credits immediately,
+  /// schedules a background server balance sync, and triggers smart auto-switch
+  /// if quota is exhausted (`429` / `insufficient_quota` / `6005` / `14018`).
   Future<void> recordTurnUsage({
     double credits = 0.0,
     int tokens = 0,
@@ -441,10 +443,15 @@ class CodeBuddyAccounts extends ChangeNotifier {
     if (idx < 0) return;
     final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final prev = active.quota ?? CodeBuddyQuotaData(lastUpdated: nowSec);
+    final delta = credits > 0 ? credits : 0.0;
+    final nextRemain = prev.remainingCredits != null && delta > 0
+        ? (prev.remainingCredits! - delta).clamp(0.0, double.infinity)
+        : prev.remainingCredits;
     final nextQuota = prev.copyWith(
-      sessionCreditsUsed: prev.sessionCreditsUsed + (credits > 0 ? credits : 0),
-      usedCredits: prev.usedCredits != null && credits > 0
-          ? prev.usedCredits! + credits
+      sessionCreditsUsed: prev.sessionCreditsUsed + delta,
+      remainingCredits: nextRemain,
+      usedCredits: prev.usedCredits != null && delta > 0
+          ? prev.usedCredits! + delta
           : prev.usedCredits,
       turnCount: prev.turnCount + 1,
       totalTokensUsed: prev.totalTokensUsed + (tokens > 0 ? tokens : 0),
@@ -458,7 +465,73 @@ class CodeBuddyAccounts extends ChangeNotifier {
 
     if (quotaExhausted && _autoSwitch.enabled) {
       await _tryAutoSwitchFrom(updated);
+      return;
     }
+
+    // Sync authoritative server credit balance after turn settles.
+    if (updated.auth.kind != CodeBuddyAuthKind.apiKey &&
+        updated.auth.accessToken.isNotEmpty) {
+      _postTurnRefreshTimer?.cancel();
+      final targetId = updated.id;
+      _postTurnRefreshTimer = Timer(const Duration(milliseconds: 2200), () {
+        unawaited(refreshQuota(targetId));
+      });
+    }
+  }
+
+  /// Auto-imports the CLI's own logged-in account when Cyte has no managed
+  /// accounts yet, so users who ran `codebuddy login` in terminal immediately
+  /// see their remaining credits without signing in twice.
+  Future<void> syncFromCliInitializeAccount(
+    Map<String, Object?> rawAccount,
+  ) async {
+    await ensureInitialized();
+    if (_accounts.isNotEmpty) return;
+    final uid =
+        (rawAccount['uid'] ?? rawAccount['userId'] ?? rawAccount['id'])
+            as String? ??
+        '';
+    final token =
+        (rawAccount['accessToken'] ??
+                rawAccount['access_token'] ??
+                rawAccount['token'])
+            as String? ??
+        '';
+    if (uid.isEmpty || token.isEmpty) return;
+    final domain =
+        (rawAccount['domain'] ?? rawAccount['endpoint']) as String? ?? '';
+    final region = CodeBuddyRegion.fromDomain(domain);
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final account = CodeBuddyAccount(
+      id: CodeBuddyOAuth.buildAccountId(region: region, uid: uid),
+      uid: uid,
+      nickname:
+          (rawAccount['nickname'] ?? rawAccount['userName']) as String? ?? uid,
+      email: rawAccount['email'] as String?,
+      enterpriseId: rawAccount['enterpriseId'] as String?,
+      enterpriseName: rawAccount['enterpriseName'] as String?,
+      region: region,
+      endpoint: CodeBuddyOAuth.normalizeEndpoint(
+        domain.startsWith('http') ? domain : region.defaultEndpoint,
+      ),
+      auth: CodeBuddyAuthData(
+        kind: CodeBuddyAuthKind.authToken,
+        accessToken: token,
+        refreshToken:
+            (rawAccount['refreshToken'] ?? rawAccount['refresh_token'])
+                as String? ??
+            '',
+        domain: domain.isNotEmpty ? domain : null,
+      ),
+      createdAt: nowSec,
+      lastUsed: nowSec,
+    );
+    _accounts.add(account);
+    _currentAccountId = account.id;
+    await _saveAccount(account);
+    await _saveIndex();
+    notifyListeners();
+    unawaited(refreshQuota(account.id));
   }
 
   Future<void> _tryAutoSwitchFrom(CodeBuddyAccount exhausted) async {
@@ -497,11 +570,37 @@ class CodeBuddyAccounts extends ChangeNotifier {
       );
       final newIdx = _accounts.indexWhere((a) => a.id == accountId);
       if (newIdx >= 0) {
-        _accounts[newIdx] = updatedAccount;
-        await _saveAccount(updatedAccount);
+        final latest = _accounts[newIdx];
+        final latestQuota = latest.quota;
+        final mergedQuota = quota.copyWith(
+          totalCredits: quota.totalCredits ?? latestQuota?.totalCredits,
+          remainingCredits:
+              quota.remainingCredits ?? latestQuota?.remainingCredits,
+          usedCredits: quota.usedCredits ?? latestQuota?.usedCredits,
+          sessionCreditsUsed:
+              latestQuota != null &&
+                  latestQuota.sessionCreditsUsed > quota.sessionCreditsUsed
+              ? latestQuota.sessionCreditsUsed
+              : quota.sessionCreditsUsed,
+          turnCount:
+              latestQuota != null && latestQuota.turnCount > quota.turnCount
+              ? latestQuota.turnCount
+              : quota.turnCount,
+          totalTokensUsed:
+              latestQuota != null &&
+                  latestQuota.totalTokensUsed > quota.totalTokensUsed
+              ? latestQuota.totalTokensUsed
+              : quota.totalTokensUsed,
+        );
+        final mergedAccount = updatedAccount.copyWith(
+          customLabel: latest.customLabel,
+          quota: mergedQuota,
+        );
+        _accounts[newIdx] = mergedAccount;
+        await _saveAccount(mergedAccount);
         if (_currentAccountId == accountId &&
-            quota.availableModelIds.isNotEmpty) {
-          CodeBuddyModels.syncForAccount(updatedAccount);
+            mergedQuota.availableModelIds.isNotEmpty) {
+          CodeBuddyModels.syncForAccount(mergedAccount);
         }
       }
     } on CodeBuddyUnauthorizedException catch (e) {

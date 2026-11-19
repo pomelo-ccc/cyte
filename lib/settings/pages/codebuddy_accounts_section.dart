@@ -64,7 +64,12 @@ class _CodeBuddyAccountsSectionState extends State<CodeBuddyAccountsSection> {
       _store.ensureInitialized().then((_) {
         final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         final stale = _store.accounts.any(
-          (a) => !a.disabled && nowSec - (a.quota?.lastUpdated ?? 0) > 60,
+          (a) =>
+              !a.disabled &&
+              ((a.auth.kind != CodeBuddyAuthKind.apiKey &&
+                      a.quota?.remainingCredits == null &&
+                      a.quota?.unlimited != true) ||
+                  nowSec - (a.quota?.lastUpdated ?? 0) > 60),
         );
         if (stale) {
           unawaited(_store.refreshAllQuotas(silent: true));
@@ -568,32 +573,80 @@ class _CodeBuddyAccountCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             decoration: BoxDecoration(
               color: (dark ? Colors.white : Colors.black).withValues(
                 alpha: dark ? 0.04 : 0.025,
               ),
               borderRadius: BorderRadius.circular(7),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Text(
-                    account.disabled
-                        ? '状态异常：${account.disabledReason ?? '请重新登录授权'}'
-                        : (account.quota?.summaryLabel ?? '状态正常'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: account.disabled
-                          ? const Color(0xFFDC3E3E)
-                          : AppColors.text,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        account.disabled
+                            ? '状态异常：${account.disabledReason ?? '请重新登录授权'}'
+                            : (account.quota?.summaryLabel ?? '状态正常'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: account.disabled
+                              ? const Color(0xFFDC3E3E)
+                              : AppColors.text,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '已对话 ${account.quota?.turnCount ?? 0} 轮 · 累计消耗 ${formatConsumedCredits(account.quota?.sessionCreditsUsed ?? 0)} 积分',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                if (!account.disabled &&
+                    (account.quota?.totalCredits ?? 0) > 0) ...[
+                  const SizedBox(height: 7),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: account.quota?.remainingFraction ?? 1.0,
+                      minHeight: 4.5,
+                      backgroundColor: (dark ? Colors.white : Colors.black)
+                          .withValues(alpha: 0.09),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        CodeBuddyQuotaRing.colorForPercentage(
+                          account.quota?.percentage ?? 100,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  '已运行 ${account.quota?.turnCount ?? 0} 轮 · Credits ${(account.quota?.sessionCreditsUsed ?? 0).toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                ),
+                ],
+                if (!account.disabled &&
+                    (account.quota?.packages.length ?? 0) > 1) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      for (final pkg in account.quota!.packages)
+                        Text(
+                          '${pkg.displayTitle}：${formatBalanceCredits(pkg.remain)} / ${formatBalanceCredits(pkg.total)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

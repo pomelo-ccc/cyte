@@ -67,7 +67,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     if (launchEffort != null && info.effortLevels.contains(launchEffort)) {
       return launchEffort;
     }
-    return info.defaultEffort;
+    return info.initialEffort;
   }
 
   @visibleForTesting
@@ -125,6 +125,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   String _model;
   String _permissionMode;
   String? _effort;
+  String? _pendingThoughtLevel;
   int _maxContextTokens;
   int _lastContextTokens = 0;
   double _turnCreditsReported = 0.0;
@@ -138,12 +139,40 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   final List<String> _stderr = [];
   static const int _maxStderrLines = 30;
   final Set<String> _initializeRequestIds = {};
+  final Set<String> _internalControlIds = {};
+  final Map<
+    String,
+    ({
+      String origReqId,
+      Map<String, Object?> origMessage,
+      Timer fallbackTimer,
+    })
+  > _pendingModelFetches = {};
+  int _internalSeq = 0;
 
   @override
   Stream<Map<String, Object?>> get messages => _messages.stream;
 
   @override
   Future<void> get exited => _exited.future;
+
+  static const _cliEffortTiers = {
+    'minimal',
+    'low',
+    'medium',
+    'high',
+    'xhigh',
+    'max',
+  };
+
+  /// Maps Cyte's effort value (`none`, `enabled`, `low`..`max`) to WorkBuddy's
+  /// `thoughtLevel` (`disabled`, `enabled`, `low`..`max`).
+  static String _toThoughtLevel(String effort) => switch (effort) {
+    'none' || 'disabled' => 'disabled',
+    'enabled' => 'enabled',
+    'minimal' => 'low',
+    _ => effort,
+  };
 
   /// Builds CLI arguments compatible with `@tencent-ai/codebuddy-code` (`cbc`).
   @visibleForTesting
@@ -166,6 +195,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           ].join('\n\n')
         : launch.instructions;
 
+    final cliEffort =
+        (effort != null && _cliEffortTiers.contains(effort)) ? effort : null;
+
     return [
       '-p',
       '--input-format',
@@ -179,7 +211,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       '--permission-mode',
       permissionMode,
       if (model.isNotEmpty && model != 'default') ...['--model', model],
-      if (effort != null && effort.isNotEmpty) ...['--effort', effort],
+      if (cliEffort != null) ...['--effort', cliEffort],
       '--autocompact',
       '$clampedAutocompact',
       if (resumeSessionId != null && resumeSessionId.isNotEmpty) ...[
@@ -236,11 +268,16 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     final accountEnv = activeAccount?.processEnvironment() ?? const {};
     final settingsMap = <String, Object?>{
       ...launch.settings,
+      if (_effort == 'none' || _effort == 'disabled')
+        'alwaysThinkingEnabled': false,
       if (activeAccount != null &&
           (activeAccount.region == CodeBuddyRegion.cloudhosted ||
               activeAccount.region == CodeBuddyRegion.selfhosted))
         'endpoint': activeAccount.endpoint,
     };
+    if (_effort != null && (_sessionId == null || _sessionId!.isEmpty)) {
+      _pendingThoughtLevel = _toThoughtLevel(_effort!);
+    }
     final hasSecrets =
         launch.hasSecrets ||
         accountEnv.containsKey('CODEBUDDY_AUTH_TOKEN') ||
@@ -290,6 +327,9 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           ...bash,
           if (launch.env != null)
             for (final name in ClaudeModelVariables.inherited) name: '',
+          // Enables session-level `thoughtLevel` & `contextWindow` in `set_config`,
+          // matching WorkBuddy's ConversationEngine subprocess environment.
+          'CBC_SESSION_CONFIG_SYNC': '1',
           ...accountEnv,
           ...ClaudeEnvironment.stateDirectory(cli.environment),
         },
@@ -331,6 +371,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     if (_closed || _recycling) return;
     _recycling = true;
     try {
+      for (final entry in _pendingModelFetches.values) {
+        entry.fallbackTimer.cancel();
+      }
+      _pendingModelFetches.clear();
+      _internalControlIds.clear();
       final old = _process;
       _process = null;
       await _stdoutSub?.cancel();
@@ -361,6 +406,28 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     }
   }
 
+  void _flushPendingSessionThoughtLevel(String sid) {
+    final pending = _pendingThoughtLevel;
+    if (pending == null || pending.isEmpty) return;
+    final info = CodeBuddyModels.of(_model);
+    if (pending == 'disabled' && (info?.onlyReasoning ?? false)) {
+      _pendingThoughtLevel = null;
+      return;
+    }
+    _pendingThoughtLevel = null;
+    final internalId = '_cyte_thought_${++_internalSeq}';
+    _internalControlIds.add(internalId);
+    _writeRaw({
+      'type': 'control_request',
+      'request_id': internalId,
+      'request': {
+        'subtype': 'set_config',
+        'session_id': sid,
+        'config': {'thoughtLevel': pending},
+      },
+    });
+  }
+
   void _onStdoutLine(String line) {
     final trimmed = line.trim();
     if (trimmed.isEmpty) return;
@@ -378,7 +445,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     }
 
     if (decoded['session_id'] case final String sid when sid.isNotEmpty) {
+      final wasEmpty = _sessionId == null || _sessionId!.isEmpty;
       _sessionId = sid;
+      if (wasEmpty || _pendingThoughtLevel != null) {
+        _flushPendingSessionThoughtLevel(sid);
+      }
       if (_pendingCustomTitle case final title?) {
         _pendingCustomTitle = null;
         _appendCustomTitleToTranscript(sid, title);
@@ -387,13 +458,15 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
     final type = decoded['type'] as String?;
     if (type == 'control_response') {
-      decoded = _normalizeControlResponse(decoded);
+      final handled = _handleControlResponse(decoded);
+      if (handled == null) return;
+      decoded = handled;
     } else if (type == 'assistant') {
       _observeAssistantUsage(decoded);
     } else if (type == 'system' && decoded['subtype'] == 'usage_update') {
       _observeTurnUsageUpdate(decoded);
     } else if (type == 'result') {
-      _onTurnResult(decoded);
+      decoded = _onTurnResult(decoded);
     }
 
     if (!_closed && !_messages.isClosed) {
@@ -401,27 +474,88 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     }
   }
 
-  Map<String, Object?> _normalizeControlResponse(
-    Map<String, Object?> message,
-  ) {
+  Map<String, Object?>? _handleControlResponse(Map<String, Object?> message) {
     final resp = (message['response'] as Map?)?.cast<String, Object?>();
     if (resp == null) return message;
     final reqId = resp['request_id'] as String?;
-    if (reqId == null || !_initializeRequestIds.remove(reqId)) {
-      return message;
-    }
-    if (resp['subtype'] != 'success') return message;
+    if (reqId == null) return message;
 
+    // 1. Swallow responses to internal fire-and-forget control requests.
+    if (_internalControlIds.remove(reqId)) {
+      return null;
+    }
+
+    // 2. Complete deferred `initialize` once `get_available_models` returns `rawModels`.
+    if (_pendingModelFetches.remove(reqId) case final pending?) {
+      pending.fallbackTimer.cancel();
+      if (resp['subtype'] == 'success') {
+        final modelsPayload =
+            (resp['response'] as Map?)?.cast<String, Object?>() ?? const {};
+        final rawList = modelsPayload['rawModels'] ?? modelsPayload['models'];
+        if (rawList is List) {
+          final maps = [
+            for (final m in rawList)
+              if (m is Map) m.cast<String, Object?>(),
+          ];
+          CodeBuddyModels.updateFromCliModels(maps);
+        }
+      }
+      return _buildNormalizedInitResponse(pending.origMessage);
+    }
+
+    // 3. Intercept `initialize`: parse stub models & CLI account, then query
+    // `get_available_models` so `rawModels` (`reasoning.supportedEfforts`,
+    // `onlyReasoning`, `credits`) are populated before kernel finishes init!
+    if (_initializeRequestIds.remove(reqId)) {
+      if (resp['subtype'] != 'success') return message;
+      final payload =
+          (resp['response'] as Map?)?.cast<String, Object?>() ?? const {};
+      if (payload['account'] case final Map rawAcc) {
+        unawaited(
+          CodeBuddyAccounts.instance.syncFromCliInitializeAccount(
+            rawAcc.cast<String, Object?>(),
+          ),
+        );
+      }
+      if (payload['models'] case final List rawModels) {
+        final maps = [
+          for (final m in rawModels)
+            if (m is Map) m.cast<String, Object?>(),
+        ];
+        CodeBuddyModels.updateFromCliModels(maps);
+      }
+
+      final fetchId = '_cyte_models_${++_internalSeq}';
+      final timer = Timer(const Duration(milliseconds: 350), () {
+        if (_pendingModelFetches.remove(fetchId) case final timedOut?) {
+          if (!_closed && !_messages.isClosed) {
+            _messages.add(_buildNormalizedInitResponse(timedOut.origMessage));
+          }
+        }
+      });
+      _pendingModelFetches[fetchId] = (
+        origReqId: reqId,
+        origMessage: message,
+        fallbackTimer: timer,
+      );
+      _writeRaw({
+        'type': 'control_request',
+        'request_id': fetchId,
+        'request': const {'subtype': 'get_available_models'},
+      });
+      return null;
+    }
+
+    return message;
+  }
+
+  Map<String, Object?> _buildNormalizedInitResponse(
+    Map<String, Object?> origMessage,
+  ) {
+    final resp =
+        (origMessage['response'] as Map?)?.cast<String, Object?>() ?? const {};
     final payload =
         (resp['response'] as Map?)?.cast<String, Object?>() ?? const {};
-    if (payload['models'] case final List rawModels) {
-      final maps = [
-        for (final m in rawModels)
-          if (m is Map) m.cast<String, Object?>(),
-      ];
-      CodeBuddyModels.updateFromCliModels(maps);
-    }
-
     final activeAccount = CodeBuddyAccounts.instance.currentAccount;
     final normalizedPayload = <String, Object?>{
       ...payload,
@@ -443,7 +577,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       ],
     };
     return {
-      ...message,
+      ...origMessage,
       'response': {
         ...resp,
         'response': normalizedPayload,
@@ -474,8 +608,14 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     if (snapshot is! Map) return;
     final total = snapshot['total'];
     if (total is! Map) return;
-    if (total['credits'] case final num c when c.toDouble() > 0) {
-      _turnCreditsReported = c.toDouble();
+    final rawCredits = total['credits'];
+    final parsedCredits = switch (rawCredits) {
+      final num c => c.toDouble(),
+      final String s => double.tryParse(s.trim()),
+      _ => null,
+    };
+    if (parsedCredits != null && parsedCredits > 0) {
+      _turnCreditsReported = parsedCredits;
     }
     if (total['usage'] case final Map u) {
       final inp =
@@ -484,10 +624,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           ((u['outputTokens'] ?? u['output_tokens']) as num?)?.toInt() ?? 0;
       final cr =
           ((u['cacheReadInputTokens'] ?? u['cache_read_input_tokens']) as num?)
-                  ?.toInt() ??
-              0;
-      final cc = ((u['cacheCreationInputTokens'] ??
-                  u['cache_creation_input_tokens']) as num?)
+              ?.toInt() ??
+          0;
+      final cc =
+          ((u['cacheCreationInputTokens'] ?? u['cache_creation_input_tokens'])
+                  as num?)
               ?.toInt() ??
           0;
       _turnTokensReported = inp + out + cr + cc;
@@ -497,11 +638,12 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     }
   }
 
-  void _onTurnResult(Map<String, Object?> decoded) {
+  Map<String, Object?> _onTurnResult(Map<String, Object?> decoded) {
     _turnInFlight = false;
     final isError = decoded['is_error'] == true;
     final resultText = '${decoded['result'] ?? ''}'.toLowerCase();
-    final quotaExhausted = isError &&
+    final quotaExhausted =
+        isError &&
         (resultText.contains('insufficient_quota') ||
             resultText.contains('quota exceeded') ||
             resultText.contains('quota exhausted') ||
@@ -519,10 +661,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
           ((u['output_tokens'] ?? u['outputTokens']) as num?)?.toInt() ?? 0;
       final cr =
           ((u['cache_read_input_tokens'] ?? u['cacheReadInputTokens']) as num?)
-                  ?.toInt() ??
-              0;
-      final cc = ((u['cache_creation_input_tokens'] ??
-                  u['cacheCreationInputTokens']) as num?)
+              ?.toInt() ??
+          0;
+      final cc =
+          ((u['cache_creation_input_tokens'] ?? u['cacheCreationInputTokens'])
+                  as num?)
               ?.toInt() ??
           0;
       resultTokens = inp + out + cr + cc;
@@ -531,10 +674,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       }
     }
     final tokens = _turnTokensReported > 0 ? _turnTokensReported : resultTokens;
+    final turnCredits = _turnCreditsReported;
 
     unawaited(
       CodeBuddyAccounts.instance.recordTurnUsage(
-        credits: _turnCreditsReported,
+        credits: turnCredits,
         tokens: tokens,
         quotaExhausted: quotaExhausted,
       ),
@@ -545,6 +689,11 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     if (_needsAccountRespawn && !_closed) {
       unawaited(_recycleProcess());
     }
+
+    if (turnCredits > 0) {
+      return {...decoded, 'credits': turnCredits};
+    }
+    return decoded;
   }
 
   void _onStderrLine(String line) {
@@ -555,6 +704,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   }
 
   void _onProcessExit(Process proc, int code) {
+    for (final entry in _pendingModelFetches.values) {
+      entry.fallbackTimer.cancel();
+    }
+    _pendingModelFetches.clear();
     if (_settingsFilePath case final path?) {
       _settingsFilePath = null;
       unawaited(ClaudeSettingsFile.delete(path));
@@ -645,9 +798,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
             _maxContextTokens = info.resolveContextWindow(_maxContextTokens);
             if (info.effortLevels.isEmpty) {
               _effort = null;
+              _pendingThoughtLevel = null;
             } else if (_effort == null ||
                 !info.effortLevels.contains(_effort)) {
-              _effort = info.defaultEffort;
+              _effort = info.initialEffort;
             }
           }
           _writeRaw({
@@ -665,22 +819,50 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       case 'apply_flag_settings':
         if (request['settings'] case final Map settings) {
           final configUpdates = <String, Object?>{};
-          if (settings['effortLevel'] case final String effort) {
-            _effort = effort;
-            configUpdates['thoughtLevel'] = effort;
+          final info = CodeBuddyModels.of(_model);
+          final hasSession = _sessionId != null && _sessionId!.isNotEmpty;
+
+          if (settings['effortLevel'] case final String rawEffort
+              when rawEffort.isNotEmpty) {
+            _effort = rawEffort;
+            final thoughtLevel = _toThoughtLevel(rawEffort);
+            final disallowedDisable =
+                thoughtLevel == 'disabled' && (info?.onlyReasoning ?? false);
+            if (!disallowedDisable) {
+              if (thoughtLevel == 'disabled') {
+                configUpdates['alwaysThinkingEnabled'] = false;
+              } else {
+                configUpdates['alwaysThinkingEnabled'] = true;
+                if (_cliEffortTiers.contains(thoughtLevel)) {
+                  configUpdates['reasoningEffort'] = thoughtLevel;
+                }
+              }
+              if (hasSession) {
+                configUpdates['thoughtLevel'] = thoughtLevel;
+                _pendingThoughtLevel = null;
+              } else {
+                _pendingThoughtLevel = thoughtLevel;
+              }
+            }
           }
+
           if (settings['contextWindow'] case final num tokens
               when tokens.toInt() > 0) {
             _maxContextTokens = tokens.toInt();
-            configUpdates['contextWindow'] = _maxContextTokens;
+            // With CBC_SESSION_CONFIG_SYNC=1, `set_config.contextWindow` is only
+            // valid for models advertising >= 2 supported context lengths.
+            if (info == null || info.contextOptions.length >= 2) {
+              configUpdates['contextWindow'] = _maxContextTokens;
+            }
           }
+
           if (configUpdates.isNotEmpty) {
             _writeRaw({
               'type': 'control_request',
               'request_id': requestId,
               'request': {
                 'subtype': 'set_config',
-                if (_sessionId != null) 'session_id': _sessionId,
+                if (hasSession) 'session_id': _sessionId,
                 'config': configUpdates,
               },
             });
@@ -779,6 +961,10 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
     if (_closed) return;
     _closed = true;
     _live.remove(this);
+    for (final entry in _pendingModelFetches.values) {
+      entry.fallbackTimer.cancel();
+    }
+    _pendingModelFetches.clear();
     final proc = _process;
     if (proc == null) {
       if (!_exited.isCompleted) _exited.complete();

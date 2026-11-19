@@ -29,6 +29,7 @@ abstract class TurnStats {
         'outputTokens': ?usage.outputTokens,
         'tokensPerSecond': ?usage.tokensPerSecond,
         'costUsd': ?usage.costUsd,
+        'credits': ?usage.credits,
       },
     });
   }
@@ -53,16 +54,22 @@ abstract class TurnStats {
         final output = count('outputTokens');
         final speed = (json['tokensPerSecond'] as num?)?.toDouble();
         final cost = (json['costUsd'] as num?)?.toDouble();
+        final credits = (json['credits'] as num?)?.toDouble();
         records[turn] = (
           worked: Duration(milliseconds: ms),
           usage:
-              input == null && output == null && speed == null && cost == null
+              input == null &&
+                  output == null &&
+                  speed == null &&
+                  cost == null &&
+                  credits == null
               ? null
               : TurnUsage(
                   inputTokens: input,
                   outputTokens: output,
                   tokensPerSecond: speed,
                   costUsd: cost,
+                  credits: credits,
                 ),
         );
       }

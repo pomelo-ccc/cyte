@@ -447,6 +447,7 @@ class PromptCache {
 class UsageStats {
   const UsageStats({
     this.costUsd,
+    this.creditsUsed,
     this.limits = const [],
     this.limitsState = LimitsState.idle,
     this.limitsOffBy,
@@ -454,6 +455,7 @@ class UsageStats {
   });
 
   final double? costUsd;
+  final double? creditsUsed;
   final List<RateLimitWindow> limits;
   final LimitsState limitsState;
 

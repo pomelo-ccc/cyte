@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 
 import '../../chat/widgets/hover_builder.dart';
 import '../../ide/ide_hover.dart';
+import '../../kernel/codebuddy/codebuddy_account_models.dart'
+    show formatBalanceCredits, formatConsumedCredits;
+import '../../kernel/codebuddy/codebuddy_accounts.dart';
+import '../../kernel/codebuddy/codebuddy_cli.dart';
 import '../../kernel/kernel_types.dart';
 import '../../keybindings/chat_keybindings.dart';
 import '../../l10n/l10n.dart';
@@ -689,6 +693,7 @@ class _ContextUsagePanelState extends State<ContextUsagePanel>
     var fallbackInput = 0;
     var fallbackOutput = 0;
     var fallbackCost = 0.0;
+    var fallbackCredits = 0.0;
     final fallbackSpeeds = <double>[];
     if (session != null) {
       for (var i = 0; i < session.itemCount; i++) {
@@ -702,6 +707,7 @@ class _ContextUsagePanelState extends State<ContextUsagePanel>
               fallbackInput += u.inputTokens ?? 0;
               fallbackOutput += u.outputTokens ?? 0;
               fallbackCost += u.costUsd ?? 0.0;
+              fallbackCredits += u.credits ?? 0.0;
               if (u.tokensPerSecond case final s? when s > 0) {
                 fallbackSpeeds.add(s);
               }
@@ -743,9 +749,30 @@ class _ContextUsagePanelState extends State<ContextUsagePanel>
             ? fallbackSpeeds.reduce((a, b) => a + b) / fallbackSpeeds.length
             : null);
 
-    final costStr =
-        summary?.totals.cost.text ??
-        _formatCost(stats?.costUsd ?? (fallbackCost > 0 ? fallbackCost : 0.0));
+    final isCodeBuddy = CodeBuddyModels.isCodeBuddyModel(
+      session?.models?.selected.id,
+    );
+    final sessionCredits =
+        stats?.creditsUsed ?? (fallbackCredits > 0 ? fallbackCredits : null);
+    final showCredits = isCodeBuddy || (sessionCredits != null && sessionCredits > 0);
+    final costLabel = showCredits
+        ? (isZh ? '消耗积分' : 'Credits used')
+        : (isZh ? '费用' : 'Cost');
+    final costStr = showCredits
+        ? (isZh
+              ? '${formatConsumedCredits(sessionCredits ?? 0.0)} 积分'
+              : '${formatConsumedCredits(sessionCredits ?? 0.0)} cr')
+        : (summary?.totals.cost.text ??
+              _formatCost(
+                stats?.costUsd ?? (fallbackCost > 0 ? fallbackCost : 0.0),
+              ));
+    final activeRemainCredits = showCredits
+        ? CodeBuddyAccounts
+              .instance
+              .currentAccount
+              ?.quota
+              ?.effectiveRemainingCredits
+        : null;
 
     final convCache = stats?.cache?.conversation ?? stats?.cache?.last;
     final int cacheRead;
@@ -960,7 +987,7 @@ class _ContextUsagePanelState extends State<ContextUsagePanel>
               children: [
                 Expanded(
                   child: _StatMetricCell(
-                    label: isZh ? '费用' : 'Cost',
+                    label: costLabel,
                     value: costStr,
                   ),
                 ),
@@ -1001,7 +1028,16 @@ class _ContextUsagePanelState extends State<ContextUsagePanel>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(child: SizedBox.shrink()),
+                Expanded(
+                  child: activeRemainCredits != null
+                      ? _StatMetricCell(
+                          label: isZh ? '账号剩余积分' : 'Remaining credits',
+                          value: isZh
+                              ? '${formatBalanceCredits(activeRemainCredits)} 积分'
+                              : '${formatBalanceCredits(activeRemainCredits)} cr',
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
             // 4. Optional Plan Limits when present

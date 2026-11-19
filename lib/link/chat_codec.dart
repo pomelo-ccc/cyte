@@ -262,6 +262,7 @@ abstract final class ChatCodec {
           'out': ?usage.outputTokens,
           'speed': ?usage.tokensPerSecond,
           'cost': ?usage.costUsd,
+          'credits': ?usage.credits,
         },
     },
     // Without the suggestions in it: a phone's app before them would show
@@ -420,6 +421,7 @@ abstract final class ChatCodec {
             outputTokens: (usage['out'] as num?)?.toInt(),
             tokensPerSecond: (usage['speed'] as num?)?.toDouble(),
             costUsd: (usage['cost'] as num?)?.toDouble(),
+            credits: (usage['credits'] as num?)?.toDouble(),
           ),
           _ => null,
         },

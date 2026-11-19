@@ -2866,7 +2866,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get composerSettingContext => '上下文';
 
   @override
-  String get composerSettingEffort => '推理强度';
+  String get composerSettingEffort => '思考强度';
 
   @override
   String get composerNoResults => '无结果';

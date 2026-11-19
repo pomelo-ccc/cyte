@@ -2,6 +2,38 @@
 /// regional deployments (CN / Global / iOA / Enterprise), and credit tracking.
 library;
 
+import 'dart:math' as math;
+
+/// Formats an account credit balance (e.g. `5,897.6`, `8,721`, `0`).
+String formatBalanceCredits(double value) {
+  if (!value.isFinite || value <= 0) return '0';
+  final roundedTenths = (value * 10).round() / 10.0;
+  final isWhole = (roundedTenths - roundedTenths.roundToDouble()).abs() < 1e-6;
+  final fixed = isWhole
+      ? roundedTenths.round().toString()
+      : roundedTenths.toStringAsFixed(1);
+  final dot = fixed.indexOf('.');
+  final intPart = dot >= 0 ? fixed.substring(0, dot) : fixed;
+  final decPart = dot >= 0 ? fixed.substring(dot) : '';
+  final buf = StringBuffer();
+  for (var i = 0; i < intPart.length; i++) {
+    if (i > 0 && (intPart.length - i) % 3 == 0) {
+      buf.write(',');
+    }
+    buf.write(intPart[i]);
+  }
+  return '$buf$decPart';
+}
+
+/// Formats per-turn or cumulative consumed credits (e.g. `0.42`, `3.03`, `0.005`).
+String formatConsumedCredits(double value) {
+  if (!value.isFinite || value <= 0) return '0.00';
+  if (value >= 100) return formatBalanceCredits(value);
+  if (value >= 0.01) return value.toStringAsFixed(2);
+  if (value >= 0.001) return value.toStringAsFixed(3);
+  return value.toStringAsFixed(4);
+}
+
 enum CodeBuddyRegion {
   cn,
   global,
@@ -33,6 +65,14 @@ enum CodeBuddyRegion {
     CodeBuddyRegion.selfhosted => 'https://copilot.tencent.com',
   };
 
+  /// Billing portal origin used by WorkBuddy for `/billing/meter/get-user-resource-summary`.
+  String get billingOrigin => switch (this) {
+    CodeBuddyRegion.global => 'https://www.codebuddy.ai',
+    CodeBuddyRegion.cn || CodeBuddyRegion.ioa => 'https://www.codebuddy.cn',
+    CodeBuddyRegion.cloudhosted || CodeBuddyRegion.selfhosted =>
+      'https://www.codebuddy.cn',
+  };
+
   /// Value for `CODEBUDDY_INTERNET_ENVIRONMENT` documented in `iam.md`.
   String? get internetEnvironment => switch (this) {
     CodeBuddyRegion.cn => 'internal',
@@ -43,8 +83,9 @@ enum CodeBuddyRegion {
   };
 
   String get planUrl => switch (this) {
-    CodeBuddyRegion.cn => 'https://www.codebuddy.cn/profile/plan',
-    CodeBuddyRegion.global => 'https://www.codebuddy.ai/profile/plan',
+    CodeBuddyRegion.cn || CodeBuddyRegion.ioa =>
+      'https://www.codebuddy.cn/profile/plans-usage',
+    CodeBuddyRegion.global => 'https://www.codebuddy.ai/profile/plans-usage',
     _ => 'https://copilot.tencent.com',
   };
 
@@ -76,7 +117,7 @@ enum CodeBuddyEdition {
   apiKey;
 
   String get label => switch (this) {
-    CodeBuddyEdition.free => 'FREE',
+    CodeBuddyEdition.free => '体验版',
     CodeBuddyEdition.pro => 'PRO',
     CodeBuddyEdition.ultimate => '旗舰版',
     CodeBuddyEdition.exclusive => '专享版',
@@ -157,16 +198,20 @@ class CodeBuddyAuthData {
   factory CodeBuddyAuthData.fromJson(Map<String, Object?> json) =>
       CodeBuddyAuthData(
         kind: CodeBuddyAuthKind.fromWire(json['kind'] as String?),
-        accessToken: json['access_token'] as String? ??
+        accessToken:
+            json['access_token'] as String? ??
             json['accessToken'] as String? ??
             '',
-        refreshToken: json['refresh_token'] as String? ??
+        refreshToken:
+            json['refresh_token'] as String? ??
             json['refreshToken'] as String? ??
             '',
-        expiresAt: (json['expires_at'] as num?)?.toInt() ??
+        expiresAt:
+            (json['expires_at'] as num?)?.toInt() ??
             (json['expiresAt'] as num?)?.toInt() ??
             0,
-        refreshExpiresAt: (json['refresh_expires_at'] as num?)?.toInt() ??
+        refreshExpiresAt:
+            (json['refresh_expires_at'] as num?)?.toInt() ??
             (json['refreshExpiresAt'] as num?)?.toInt() ??
             0,
         domain: json['domain'] as String?,
@@ -186,12 +231,84 @@ class CodeBuddyAuthData {
   };
 }
 
+/// One resource/credit package returned by WorkBuddy's
+/// `/billing/meter/get-user-resource-summary` API.
+class CodeBuddyCreditPackage {
+  const CodeBuddyCreditPackage({
+    required this.packageCode,
+    this.packageName,
+    required this.total,
+    required this.remain,
+    required this.used,
+    this.expireTime,
+  });
+
+  final String packageCode;
+  final String? packageName;
+  final double total;
+  final double remain;
+  final double used;
+  final String? expireTime;
+
+  String get displayTitle {
+    final name = packageName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return labelForPackageCode(packageCode) ?? '积分资源包';
+  }
+
+  static String? labelForPackageCode(String? code) {
+    if (code == null || code.isEmpty) return null;
+    if (code.contains('_043_')) return 'Buddy One';
+    if (code.contains('_027_')) return '旗舰版';
+    if (code.contains('_026_')) return '高级版';
+    if (code.contains('_023_')) return '青春版';
+    if (code.contains('_039_') || code.contains('_040_')) return '专业试用版';
+    if (code.contains('_002_') ||
+        code.contains('_003_') ||
+        code.contains('_005_')) {
+      return '专业版 Pro';
+    }
+    if (code.contains('_007_') || code.contains('_006_')) return '加油包 / 增购积分';
+    if (code.contains('_001_') ||
+        code.contains('_008_') ||
+        code.contains('_035_')) {
+      return '体验版积分包';
+    }
+    return null;
+  }
+
+  factory CodeBuddyCreditPackage.fromJson(Map<String, Object?> json) =>
+      CodeBuddyCreditPackage(
+        packageCode: json['package_code'] as String? ?? '',
+        packageName: json['package_name'] as String?,
+        total: (json['total'] as num?)?.toDouble() ?? 0.0,
+        remain: (json['remain'] as num?)?.toDouble() ?? 0.0,
+        used: (json['used'] as num?)?.toDouble() ?? 0.0,
+        expireTime: json['expire_time'] as String?,
+      );
+
+  Map<String, Object?> toJson() => {
+    'package_code': packageCode,
+    if (packageName != null && packageName!.isNotEmpty)
+      'package_name': packageName,
+    'total': total,
+    'remain': remain,
+    'used': used,
+    if (expireTime != null && expireTime!.isNotEmpty) 'expire_time': expireTime,
+  };
+}
+
 class CodeBuddyQuotaData {
   const CodeBuddyQuotaData({
     this.edition = CodeBuddyEdition.free,
     this.paymentType,
+    this.subscriptionPackageCode,
+    this.subscriptionPackageName,
     this.totalCredits,
+    this.remainingCredits,
     this.usedCredits,
+    this.unlimited = false,
+    this.packages = const [],
     this.sessionCreditsUsed = 0.0,
     this.turnCount = 0,
     this.totalTokensUsed = 0,
@@ -205,8 +322,13 @@ class CodeBuddyQuotaData {
 
   final CodeBuddyEdition edition;
   final String? paymentType;
+  final String? subscriptionPackageCode;
+  final String? subscriptionPackageName;
   final double? totalCredits;
+  final double? remainingCredits;
   final double? usedCredits;
+  final bool unlimited;
+  final List<CodeBuddyCreditPackage> packages;
   final double sessionCreditsUsed;
   final int turnCount;
   final int totalTokensUsed;
@@ -217,40 +339,76 @@ class CodeBuddyQuotaData {
   final int lastUpdated;
   final String? fetchError;
 
+  /// Effective remaining credits for this account when finite and known.
+  double? get effectiveRemainingCredits {
+    if (unlimited) return null;
+    if (quotaExhausted) return 0.0;
+    if (remainingCredits case final rem?) {
+      return math.max(0.0, rem);
+    }
+    if (totalCredits case final total? when total > 0) {
+      final used = usedCredits ?? sessionCreditsUsed;
+      return (total - used).clamp(0.0, total);
+    }
+    return null;
+  }
+
   double get remainingFraction {
     if (quotaExhausted) return 0.0;
+    if (unlimited) return 1.0;
     final total = totalCredits;
     if (total != null && total > 0) {
-      final used = usedCredits ?? sessionCreditsUsed;
-      return ((total - used) / total).clamp(0.0, 1.0);
+      final left = effectiveRemainingCredits ?? 0.0;
+      return (left / total).clamp(0.0, 1.0);
     }
     return 1.0;
   }
 
   int get percentage => (remainingFraction * 100).round().clamp(0, 100);
 
-  String get summaryLabel {
-    if (quotaExhausted) return '配额已用尽';
-    final total = totalCredits;
-    if (total != null && total > 0) {
-      final left = (total - (usedCredits ?? sessionCreditsUsed)).clamp(
-        0.0,
-        total,
-      );
-      return '${left.toStringAsFixed(left == left.roundToDouble() ? 0 : 1)} / '
-          '${total.toStringAsFixed(total == total.roundToDouble() ? 0 : 1)} Credits';
+  /// Short inline label for the composer toolbar pill (e.g. `剩余 5,897.6 积分`).
+  String get pillCreditsLabel {
+    if (quotaExhausted) return '积分已用尽';
+    if (unlimited) return '不限积分';
+    if (effectiveRemainingCredits case final left?) {
+      return '剩余 ${formatBalanceCredits(left)} 积分';
     }
     if (sessionCreditsUsed > 0) {
-      return '累计已用 ${sessionCreditsUsed.toStringAsFixed(2)} Credits';
+      return '已用 ${formatConsumedCredits(sessionCreditsUsed)} 积分';
     }
-    return '${edition.label} · 正常可用';
+    return subscriptionPackageName?.trim().isNotEmpty == true
+        ? subscriptionPackageName!.trim()
+        : edition.label;
+  }
+
+  String get summaryLabel {
+    if (quotaExhausted) return '积分配额已用尽';
+    if (unlimited) return '企业不限积分 · 正常可用';
+    final left = effectiveRemainingCredits;
+    final total = totalCredits;
+    if (left != null && total != null && total > 0) {
+      return '剩余 ${formatBalanceCredits(left)} / ${formatBalanceCredits(total)} 积分';
+    }
+    if (left != null) {
+      return '剩余 ${formatBalanceCredits(left)} 积分';
+    }
+    if (sessionCreditsUsed > 0) {
+      return '累计消耗 ${formatConsumedCredits(sessionCreditsUsed)} 积分';
+    }
+    final plan = subscriptionPackageName?.trim();
+    return '${(plan != null && plan.isNotEmpty) ? plan : edition.label} · 正常可用';
   }
 
   CodeBuddyQuotaData copyWith({
     CodeBuddyEdition? edition,
     String? paymentType,
+    String? subscriptionPackageCode,
+    String? subscriptionPackageName,
     double? totalCredits,
+    double? remainingCredits,
     double? usedCredits,
+    bool? unlimited,
+    List<CodeBuddyCreditPackage>? packages,
     double? sessionCreditsUsed,
     int? turnCount,
     int? totalTokensUsed,
@@ -264,8 +422,15 @@ class CodeBuddyQuotaData {
   }) => CodeBuddyQuotaData(
     edition: edition ?? this.edition,
     paymentType: paymentType ?? this.paymentType,
+    subscriptionPackageCode:
+        subscriptionPackageCode ?? this.subscriptionPackageCode,
+    subscriptionPackageName:
+        subscriptionPackageName ?? this.subscriptionPackageName,
     totalCredits: totalCredits ?? this.totalCredits,
+    remainingCredits: remainingCredits ?? this.remainingCredits,
     usedCredits: usedCredits ?? this.usedCredits,
+    unlimited: unlimited ?? this.unlimited,
+    packages: packages ?? this.packages,
     sessionCreditsUsed: sessionCreditsUsed ?? this.sessionCreditsUsed,
     turnCount: turnCount ?? this.turnCount,
     totalTokensUsed: totalTokensUsed ?? this.totalTokensUsed,
@@ -281,8 +446,18 @@ class CodeBuddyQuotaData {
       CodeBuddyQuotaData(
         edition: CodeBuddyEdition.fromWire(json['edition'] as String?),
         paymentType: json['payment_type'] as String?,
+        subscriptionPackageCode: json['subscription_package_code'] as String?,
+        subscriptionPackageName: json['subscription_package_name'] as String?,
         totalCredits: (json['total_credits'] as num?)?.toDouble(),
+        remainingCredits: (json['remaining_credits'] as num?)?.toDouble(),
         usedCredits: (json['used_credits'] as num?)?.toDouble(),
+        unlimited: json['unlimited'] as bool? ?? false,
+        packages: [
+          if (json['packages'] case final List list)
+            for (final item in list)
+              if (item is Map)
+                CodeBuddyCreditPackage.fromJson(item.cast<String, Object?>()),
+        ],
         sessionCreditsUsed:
             (json['session_credits_used'] as num?)?.toDouble() ?? 0.0,
         turnCount: (json['turn_count'] as num?)?.toInt() ?? 0,
@@ -302,16 +477,23 @@ class CodeBuddyQuotaData {
   Map<String, Object?> toJson() => {
     'edition': edition.name,
     if (paymentType != null) 'payment_type': paymentType,
+    if (subscriptionPackageCode != null)
+      'subscription_package_code': subscriptionPackageCode,
+    if (subscriptionPackageName != null)
+      'subscription_package_name': subscriptionPackageName,
     if (totalCredits != null) 'total_credits': totalCredits,
+    if (remainingCredits != null) 'remaining_credits': remainingCredits,
     if (usedCredits != null) 'used_credits': usedCredits,
+    if (unlimited) 'unlimited': true,
+    if (packages.isNotEmpty)
+      'packages': [for (final p in packages) p.toJson()],
     'session_credits_used': sessionCreditsUsed,
     'turn_count': turnCount,
     'total_tokens_used': totalTokensUsed,
     'quota_exhausted': quotaExhausted,
     if (resetTime != null) 'reset_time': resetTime,
     if (upgradeUrl != null) 'upgrade_url': upgradeUrl,
-    if (availableModelIds.isNotEmpty)
-      'available_model_ids': availableModelIds,
+    if (availableModelIds.isNotEmpty) 'available_model_ids': availableModelIds,
     'last_updated': lastUpdated,
     if (fetchError != null) 'fetch_error': fetchError,
   };
@@ -384,7 +566,9 @@ class CodeBuddyAccount {
           email!.trim() != displayName)
         email!.trim()
       else if (uid.isNotEmpty && uid != displayName)
-        uid.length > 16 ? '${uid.substring(0, 8)}…${uid.substring(uid.length - 4)}' : uid,
+        uid.length > 16
+            ? '${uid.substring(0, 8)}…${uid.substring(uid.length - 4)}'
+            : uid,
     ];
     return parts.join(' · ');
   }

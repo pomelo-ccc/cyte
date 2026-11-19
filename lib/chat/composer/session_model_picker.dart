@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../channel/channel_setup.dart' show ChannelSetup;
 import '../../ide/ide_dialog.dart';
+import '../../kernel/agent_kernel.dart' show KernelChoiceKind;
+import '../../kernel/codebuddy/codebuddy_cli.dart';
 import '../../kernel/kernel_types.dart';
 import '../../l10n/l10n.dart';
 import '../../models/model_provider.dart' show parseModelRef;
@@ -45,10 +47,49 @@ class SessionModelPicker extends StatelessWidget {
   final Object? tapRegionGroupId;
   final FocusNode? focusNode;
 
-  /// The model with its settings, e.g. "Opus · 1M · High": the context
-  /// only when it is not the standard one; its upstream before it only
-  /// when another upstream has a model of its name.
-  String _label(KernelOption model, List<KernelOption> options) {
+  /// Remembers the last active intensity per toggleable model so toggling
+  /// `思考模式` OFF → ON restores the user's previous intensity tier.
+  static final Map<String, String> _lastActiveEfforts = {};
+
+  /// The model with its settings, e.g. "GLM-5.3 · 极致" or "Opus · 1M · High".
+  String _label(
+    BuildContext context,
+    KernelOption model,
+    List<KernelOption> options,
+  ) {
+    final isZh = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
+    if (CodeBuddyModels.of(model.id) case final cbc?) {
+      final settings = session.modelSettings(model.id);
+      String? contextLabel;
+      String? effortLabel;
+      for (final setting in settings) {
+        if (setting.kind == KernelChoiceKind.context &&
+            setting.options.length > 1) {
+          contextLabel = setting.selected?.label;
+        } else if (setting.kind == KernelChoiceKind.effort) {
+          final sel = setting.selected;
+          if (sel != null) {
+            if (sel.id == 'none') {
+              effortLabel = isZh ? '思考关闭' : 'Off';
+            } else if (cbc.supportedEfforts.isNotEmpty) {
+              effortLabel = sel.label;
+            }
+          }
+        }
+      }
+      return [
+        if (model.group case final group?
+            when options.any(
+              (other) =>
+                  other.label == model.label && other.group?.id != group.id,
+            ))
+          group.label,
+        model.label,
+        ?contextLabel,
+        ?effortLabel,
+      ].join(' · ');
+    }
+
     return [
       if (model.group case final group?
           when options.any(
@@ -62,6 +103,164 @@ class SessionModelPicker extends StatelessWidget {
           if (setting.selected case final selected?)
             selected.label,
     ].join(' · ');
+  }
+
+  /// Builds WorkBuddy-exact model settings (`思考模式` switch + `思考强度` + `上下文`)
+  /// for CodeBuddy models, preserving standard settings for all other providers.
+  List<ModelSettingChoice> _settingsFor(
+    BuildContext context,
+    KernelOption option,
+  ) {
+    final rawSettings = session.modelSettings(option.id);
+    if (CodeBuddyModels.of(option.id) case final cbc?) {
+      final isZh = Localizations.maybeLocaleOf(context)?.languageCode == 'zh';
+      final result = <ModelSettingChoice>[];
+
+      for (final setting in rawSettings) {
+        if (setting.kind == KernelChoiceKind.effort) {
+          final selectedOpt = setting.selected;
+          final selectedId = selectedOpt?.id;
+          if (selectedId != null && selectedId != 'none') {
+            _lastActiveEfforts[option.id] = selectedId;
+          }
+
+          if (cbc.canToggleThinking) {
+            final isThinking = selectedId != 'none';
+            final toggleOpt = KernelOption(
+              'thinking',
+              isZh ? '思考模式' : 'Thinking mode',
+              Icons.psychology_alt_rounded,
+              '',
+            );
+            result.add(
+              ModelSettingChoice(
+                kind: null,
+                options: [toggleOpt],
+                selected: isThinking ? toggleOpt : null,
+                toggle: true,
+                onSelected: (_) {
+                  if (isThinking) {
+                    final offOpt = setting.options
+                        .where((o) => o.id == 'none')
+                        .firstOrNull;
+                    if (offOpt != null) {
+                      unawaited(
+                        _switch(
+                          context,
+                          option,
+                          () => setting.onSelected(offOpt),
+                        ),
+                      );
+                    }
+                  } else {
+                    final restoreId =
+                        _lastActiveEfforts[option.id] ??
+                        cbc.defaultEffort ??
+                        cbc.supportedEfforts.firstOrNull ??
+                        'enabled';
+                    final onOpt =
+                        setting.options
+                            .where((o) => o.id == restoreId)
+                            .firstOrNull ??
+                        setting.options
+                            .where((o) => o.id != 'none')
+                            .firstOrNull;
+                    if (onOpt != null) {
+                      unawaited(
+                        _switch(
+                          context,
+                          option,
+                          () => setting.onSelected(onOpt),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            );
+
+            // WorkBuddy rule: `u = effortItems.length > 0 && (!canToggleThinking || isThinking)`
+            if (isThinking && cbc.supportedEfforts.isNotEmpty) {
+              final intensityOptions = [
+                for (final o in setting.options)
+                  if (cbc.supportedEfforts.contains(o.id)) o,
+              ];
+              if (intensityOptions.isNotEmpty) {
+                result.add(
+                  ModelSettingChoice(
+                    kind: KernelChoiceKind.effort,
+                    options: intensityOptions,
+                    selected: intensityOptions
+                        .where((o) => o.id == selectedId)
+                        .firstOrNull,
+                    onSelected: (choice) => unawaited(
+                      _switch(
+                        context,
+                        option,
+                        () => setting.onSelected(choice),
+                      ),
+                    ),
+                  ),
+                );
+              }
+            }
+          } else if (cbc.supportedEfforts.isNotEmpty) {
+            final intensityOptions = [
+              for (final o in setting.options)
+                if (cbc.supportedEfforts.contains(o.id)) o,
+            ];
+            if (intensityOptions.isNotEmpty) {
+              result.add(
+                ModelSettingChoice(
+                  kind: KernelChoiceKind.effort,
+                  options: intensityOptions,
+                  selected:
+                      intensityOptions
+                          .where((o) => o.id == selectedId)
+                          .firstOrNull ??
+                      intensityOptions.first,
+                  onSelected: (choice) => unawaited(
+                    _switch(context, option, () => setting.onSelected(choice)),
+                  ),
+                ),
+              );
+            }
+          }
+        } else {
+          result.add(
+            ModelSettingChoice(
+              kind: setting.kind,
+              options: setting.options,
+              selected: setting.selected,
+              toggle: setting.toggle,
+              onSelected: (choice) => unawaited(
+                _switch(context, option, () => setting.onSelected(choice)),
+              ),
+            ),
+          );
+        }
+      }
+
+      if (_resumeAfterLimit(context, option.id) case final resume?) {
+        result.add(resume);
+      }
+      return result;
+    }
+
+    return [
+      for (final setting in rawSettings)
+        ModelSettingChoice(
+          kind: setting.kind,
+          options: setting.options,
+          selected: setting.selected,
+          toggle: setting.toggle,
+          onSelected: (choice) => unawaited(
+            _switch(context, option, () => setting.onSelected(choice)),
+          ),
+        ),
+      ?_resumeAfterLimit(context, option.id),
+      ?_autoResetCredits(context, option.id),
+    ];
   }
 
   Widget? _pingBadge(KernelOption model) {
@@ -185,6 +384,7 @@ class SessionModelPicker extends StatelessWidget {
         ?ResumeAfterResetSetting.changes,
         ModelProviders.current,
         ProviderHealthMonitor.instance,
+        CodeBuddyModels.changes,
       ]),
       builder: (context, _) => _build(context),
     );
@@ -200,31 +400,22 @@ class SessionModelPicker extends StatelessWidget {
         onTap: () => unawaited(showModelWelcome(context)),
       );
     }
+    final allCodeBuddy =
+        model.options.isNotEmpty &&
+        model.options.every((o) => CodeBuddyModels.isCodeBuddyModel(o.id));
     return ComposerPicker(
       key: pickerKey,
       options: model.options,
       selected: model.selected,
-      label: _label(model.selected, model.options),
+      label: _label(context, model.selected, model.options),
       trailingBadge: _pingBadge(model.selected),
-      // Each its name alone, one line; its maker's logo and its upstream's
-      // heading tell the rest.
-      describes: false,
-      settingsOf: (option) => [
-        for (final setting in session.modelSettings(option.id))
-          ModelSettingChoice(
-            kind: setting.kind,
-            options: setting.options,
-            selected: setting.selected,
-            toggle: setting.toggle,
-            onSelected: (choice) => unawaited(
-              _switch(context, option, () => setting.onSelected(choice)),
-            ),
-          ),
-        ?_resumeAfterLimit(context, option.id),
-        ?_autoResetCredits(context, option.id),
-      ],
+      // For CodeBuddy models, show each model's credit multiplier (`0.29x`)
+      // right-aligned on the same row just like WorkBuddy.
+      describes: allCodeBuddy,
+      descriptionAside: allCodeBuddy,
+      settingsOf: (option) => _settingsFor(context, option),
       tooltip: tooltip,
-      menuWidth: 260,
+      menuWidth: 268,
       searchPlaceholder: l10n.modelsSearch,
       footers: [
         if (SettingsOpener.maybeOf(context) case final open?)

@@ -158,4 +158,30 @@ void main() {
     final last = tester.getRect(find.text('92.72k tokens'));
     expect(last.top, greaterThan(first.bottom - 1));
   });
+
+  testWidgets('TurnFooter renders consumed CodeBuddy credits in zh locale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('zh'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: TurnFooter(
+              answer: '已完成',
+              worked: Duration(seconds: 5),
+              usage: TurnUsage(
+                inputTokens: 2000,
+                outputTokens: 300,
+                credits: 0.42,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('消耗 0.42 积分'), findsOneWidget);
+  });
 }

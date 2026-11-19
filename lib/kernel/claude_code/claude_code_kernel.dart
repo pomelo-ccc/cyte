@@ -145,6 +145,7 @@ class ClaudeCodeKernel
       ownModel: _ownModel,
     );
     _providers.addListener(_providersChanged);
+    CodeBuddyModels.changes.addListener(_providersChanged);
     ExtensionSwitches.changes?.addListener(_applySwitches);
     _live.add(this);
     _sessionId = _context.resume?.id;
@@ -535,6 +536,8 @@ class ClaudeCodeKernel
   /// reported while they were in use.
   static final Map<String, int> _modelWindows = {};
   double? _cost;
+  double? _credits;
+  double? _turnCredits;
 
   /// The conversation's requests to the model, by their message's id, and
   /// how the cache took their input: from the session's file when resumed
@@ -976,6 +979,7 @@ class ClaudeCodeKernel
     _disposed = true;
     _goalRetry?.cancel();
     _providers.removeListener(_providersChanged);
+    CodeBuddyModels.changes.removeListener(_providersChanged);
     ExtensionSwitches.changes?.removeListener(_applySwitches);
     _live.remove(this);
     _cancelSdkCalls();
@@ -1158,6 +1162,7 @@ class ClaudeCodeKernel
 
   void _beginTurn(String id, {bool unprompted = false}) {
     _turn = id;
+    _turnCredits = null;
     _limitHit(null);
     _turnStarted = DateTime.now();
     _usage?.requested();
@@ -1174,12 +1179,15 @@ class ClaudeCodeKernel
     final turn = _turn;
     if (turn == null) return;
     _turn = null;
+    final pendingCredits = _turnCredits;
+    _turnCredits = null;
     if (interrupted) _cancelSdkCalls();
     worked ??= switch (_turnStarted) {
       final started? => DateTime.now().difference(started),
       null => null,
     };
     _translator.settle();
+    final resolvedCredits = usage?.credits ?? pendingCredits;
     // As streamed, where it was: the agent's own requests, timed.
     if (_translator.turnUsage case final streamed?) {
       usage = TurnUsage(
@@ -1187,6 +1195,17 @@ class ClaudeCodeKernel
         outputTokens: streamed.outputTokens,
         tokensPerSecond: streamed.tokensPerSecond,
         costUsd: usage?.costUsd,
+        credits: resolvedCredits,
+      );
+    } else if (resolvedCredits != null && usage == null) {
+      usage = TurnUsage(credits: resolvedCredits);
+    } else if (resolvedCredits != null && usage != null && usage.credits == null) {
+      usage = TurnUsage(
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        tokensPerSecond: usage.tokensPerSecond,
+        costUsd: usage.costUsd,
+        credits: resolvedCredits,
       );
     }
     for (final MapEntry(key: id, value: permission) in _permissions.entries) {
@@ -2026,16 +2045,24 @@ class ClaudeCodeKernel
         emitInfoChanged();
       case 'system' when message['subtype'] == 'usage_update':
         if (message['_meta'] case {
-          'codebuddy.ai/turnUsage': {
-            'total': {'usage': final Map<Object?, Object?> u},
-          },
+          'codebuddy.ai/turnUsage': {'total': final Map<Object?, Object?> total},
         }) {
-          final input =
-              (claudeInt(u['inputTokens']) ?? 0) +
-              (claudeInt(u['outputTokens']) ?? 0);
-          if (input > 0 && input != _toldContext) {
-            _toldContext = input;
-            _reportContext();
+          final parsedCredits = switch (total['credits']) {
+            final num c => c.toDouble(),
+            final String s => double.tryParse(s.trim()),
+            _ => null,
+          };
+          if (parsedCredits != null && parsedCredits > 0) {
+            _turnCredits = parsedCredits;
+          }
+          if (total['usage'] case final Map<Object?, Object?> u) {
+            final input =
+                (claudeInt(u['inputTokens']) ?? 0) +
+                (claudeInt(u['outputTokens']) ?? 0);
+            if (input > 0 && input != _toldContext) {
+              _toldContext = input;
+              _reportContext();
+            }
           }
         }
       case 'assistant':
@@ -2258,10 +2285,23 @@ class ClaudeCodeKernel
     // The session's cost so far: the turn's is what it grew by (all of it
     // when it fell, the CLI having started over).
     double? turnCost;
+    var statsChanged = false;
     if (message['total_cost_usd'] case final num cost) {
       final before = _cost ?? 0;
       _cost = cost.toDouble();
       turnCost = _cost! >= before ? _cost! - before : _cost;
+      statsChanged = true;
+    }
+    final turnCredits = switch (message['credits']) {
+      final num c when c.toDouble() > 0 => c.toDouble(),
+      _ => _turnCredits,
+    };
+    _turnCredits = null;
+    if (turnCredits != null && turnCredits > 0) {
+      _credits = (_credits ?? 0.0) + turnCredits;
+      statsChanged = true;
+    }
+    if (statsChanged) {
       _reportStats();
     }
     // The models' own windows: the conversation's may be less (see
@@ -2314,8 +2354,9 @@ class ClaudeCodeKernel
           ].fold<int>(0, (sum, key) => sum + (claudeInt(usage[key]) ?? 0)),
           outputTokens: claudeInt(usage['output_tokens']),
           costUsd: turnCost,
+          credits: turnCredits,
         ),
-        _ => TurnUsage(costUsd: turnCost),
+        _ => TurnUsage(costUsd: turnCost, credits: turnCredits),
       },
     );
     unawaited(_refreshContext(completed: _custom == null));
@@ -2709,6 +2750,7 @@ class ClaudeCodeKernel
       nextSeq,
       UsageStats(
         costUsd: _cost,
+        creditsUsed: _credits,
         limits: _limits,
         limitsState: _limitsState,
         limitsOffBy: _limitsOffBy,
@@ -3050,6 +3092,15 @@ class ClaudeCodeKernel
       final keptTurns = _keptTurns(session);
       final page = await read(session, turns: _firstTurns);
       final kept = await keptTurns;
+      var keptCredits = 0.0;
+      for (final record in kept.values) {
+        if (record.usage?.credits case final c? when c > 0) {
+          keptCredits += c;
+        }
+      }
+      if (keptCredits > 0) {
+        _credits = keptCredits;
+      }
       _earlier = page.earlier;
       _translator
         ..replaying = true
@@ -3083,7 +3134,7 @@ class ClaudeCodeKernel
       }
       _readHead = _translator.head;
       _translator.endReplay();
-      if (counted) _reportStats();
+      if (counted || _credits != null) _reportStats();
       _reportContext();
     } on Object catch (error) {
       emit(
@@ -3574,8 +3625,8 @@ class ClaudeCodeKernel
   }) {
     if (cbc.effortLevels.isEmpty) return null;
     final candidate =
-        _pickedEfforts[ref] ?? (active ? _effort : null) ?? cbc.defaultEffort;
-    return cbc.effortLevels.contains(candidate) ? candidate : cbc.defaultEffort;
+        _pickedEfforts[ref] ?? (active ? _effort : null) ?? cbc.initialEffort;
+    return cbc.effortLevels.contains(candidate) ? candidate : cbc.initialEffort;
   }
 
   /// The context the session compacts at: a provider's model's, else as
@@ -3622,7 +3673,7 @@ class ClaudeCodeKernel
         modelRef(codebuddyBuiltinProviderId, m.id),
         m.label,
         Icons.rocket_launch_rounded,
-        m.description,
+        m.creditsRate ?? '',
         group: _codebuddyGroup,
         iconBuilder: _modelIcon(codebuddyBuiltinProviderId, m.id),
       ),
@@ -3709,13 +3760,12 @@ class ClaudeCodeKernel
         ];
       }
       if (CodeBuddyModels.of(model) case final cbc?
-          when cbc.contextOptions.isNotEmpty) {
-        final fixed = cbc.contextOptions.length == 1;
+          when cbc.contextOptions.length >= 2) {
         return [
           for (final tokens in cbc.contextOptions)
             KernelOption(
               '$tokens',
-              fixed ? '${formatTokens(tokens)}（官方固定）' : formatTokens(tokens),
+              formatTokens(tokens),
               Icons.notes_rounded,
               cbc.contextOptionDescription(tokens),
             ),
@@ -4008,24 +4058,37 @@ class ClaudeCodeKernel
 
   @override
   late final ModelSetting effort = _ModelSetting(
-    optionsFor: (model) => [
-      for (final level in _effortLevelsOf(model))
-        KernelOption(
-          level,
-          effortLabel(level),
-          Icons.speed_rounded,
-          switch (level) {
-            'none' => 'No thinking',
-            'minimal' => 'Minimal thinking',
-            'low' => 'Fastest, least thinking',
-            'medium' => 'Balanced',
-            'high' => 'Thinks more',
-            'xhigh' => 'Thinks a lot more',
-            'max' => 'Most thinking, this session only',
-            _ => '',
-          },
-        ),
-    ],
+    optionsFor: (model) {
+      if (CodeBuddyModels.of(model) case final cbc?) {
+        return [
+          for (final level in cbc.effortLevels)
+            KernelOption(
+              level,
+              codebuddyEffortLabel(level),
+              Icons.speed_rounded,
+              codebuddyEffortDescription(level),
+            ),
+        ];
+      }
+      return [
+        for (final level in _effortLevelsOf(model))
+          KernelOption(
+            level,
+            effortLabel(level),
+            Icons.speed_rounded,
+            switch (level) {
+              'none' => 'No thinking',
+              'minimal' => 'Minimal thinking',
+              'low' => 'Fastest, least thinking',
+              'medium' => 'Balanced',
+              'high' => 'Thinks more',
+              'xhigh' => 'Thinks a lot more',
+              'max' => 'Most thinking, this session only',
+              _ => '',
+            },
+          ),
+      ];
+    },
     selected: () {
       if (_custom case (_, final info)) return _effortFor(info);
       if (CodeBuddyModels.of(_model) case final cbc?) {

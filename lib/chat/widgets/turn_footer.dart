@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../ide/ide_hover.dart';
+import '../../kernel/codebuddy/codebuddy_account_models.dart'
+    show formatConsumedCredits;
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/codicons.dart';
@@ -218,7 +220,9 @@ class _TurnFooterState extends State<TurnFooter> {
     final worked = widget.worked;
     final speed = usage?.tokensPerSecond;
     final cost = usage?.costUsd;
+    final credits = usage?.credits;
     final tokens = usage?.totalTokens;
+    final isZh = l10n.localeName.startsWith('zh');
     return [
       if (worked case final worked?)
         _Stat(
@@ -232,7 +236,9 @@ class _TurnFooterState extends State<TurnFooter> {
           text: l10n.turnSpeed(speed.toStringAsFixed(2)),
           hint: l10n.turnSpeedHint,
         ),
-      if (cost != null)
+      if (credits != null && credits > 0)
+        _CreditsStat(credits: credits, isZh: isZh),
+      if (cost != null && (credits == null || credits <= 0))
         _Stat(text: TurnFooter.formatCost(cost), hint: l10n.turnCostHint),
       if (tokens != null && tokens > 0)
         _Stat(
@@ -568,6 +574,41 @@ class _Stat extends StatelessWidget {
             )
           else
             Text(text, style: TextStyle(color: color, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CreditsStat extends StatelessWidget {
+  const _CreditsStat({required this.credits, required this.isZh});
+
+  final double credits;
+  final bool isZh;
+
+  @override
+  Widget build(BuildContext context) {
+    final formatted = formatConsumedCredits(credits);
+    final label = isZh ? '消耗 $formatted 积分' : '$formatted credits';
+    final hint = isZh
+        ? '本轮对话消耗 $formatted CodeBuddy 积分'
+        : 'Consumed $formatted CodeBuddy credits in this turn';
+    final color = AppColors.textFaint;
+    return IdeHover(
+      message: hint,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Codicons.sparkle, size: 11.5, color: color),
+          const SizedBox(width: 3.5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
         ],
       ),
     );

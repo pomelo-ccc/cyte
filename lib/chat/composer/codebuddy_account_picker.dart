@@ -14,10 +14,12 @@ import '../../settings/settings_dialog.dart'
 import '../../theme/app_theme.dart';
 import '../../theme/codicons.dart';
 import '../../theme/workbench_theme.dart' show themeColors;
+import '../../workspace/editor_launcher.dart' show openExternal;
 import '../widgets/hover_builder.dart';
 
-/// Compact composer-toolbar trigger showing the active CodeBuddy account status
-/// and opening the 1-click CodeBuddy Account Switcher & Credits Popover.
+/// Compact composer-toolbar pill showing the active CodeBuddy account's
+/// real-time remaining credits (`剩余 5,897.6 积分`) and opening the 1-click
+/// CodeBuddy Account Switcher & Credits Popover.
 class CodeBuddyAccountPicker extends StatefulWidget {
   const CodeBuddyAccountPicker({super.key, required this.modelId});
 
@@ -33,7 +35,20 @@ class _CodeBuddyAccountPickerState extends State<CodeBuddyAccountPicker> {
   @override
   void initState() {
     super.initState();
-    unawaited(_store.ensureInitialized());
+    unawaited(
+      _store.ensureInitialized().then((_) {
+        final active = _store.currentAccount;
+        if (active == null || active.disabled) return;
+        final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        final missingBalance =
+            active.auth.kind != CodeBuddyAuthKind.apiKey &&
+            active.quota?.remainingCredits == null &&
+            active.quota?.unlimited != true;
+        if (missingBalance || nowSec - (active.quota?.lastUpdated ?? 0) > 60) {
+          unawaited(_store.refreshQuota(active.id));
+        }
+      }),
+    );
   }
 
   void _openPopover(BuildContext pillContext) {
@@ -44,7 +59,11 @@ class _CodeBuddyAccountPickerState extends State<CodeBuddyAccountPicker> {
 
     final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     if (_store.currentAccount case final active?) {
-      if (nowSec - (active.quota?.lastUpdated ?? 0) > 60) {
+      final missingBalance =
+          active.auth.kind != CodeBuddyAuthKind.apiKey &&
+          active.quota?.remainingCredits == null &&
+          active.quota?.unlimited != true;
+      if (missingBalance || nowSec - (active.quota?.lastUpdated ?? 0) > 45) {
         unawaited(_store.refreshQuota(active.id));
       }
     }
@@ -83,17 +102,27 @@ class _CodeBuddyAccountPickerState extends State<CodeBuddyAccountPicker> {
       listenable: _store,
       builder: (context, _) {
         final active = _store.currentAccount;
-        final busy = _store.switchingId != null;
+        final busy =
+            _store.switchingId != null ||
+            (active != null &&
+                _store.isRefreshing(active.id) &&
+                active.quota?.remainingCredits == null);
         final dark = themeColors.dark;
         final hoverBg = (dark ? Colors.white : Colors.black).withValues(
           alpha: dark ? 0.08 : 0.05,
         );
+        final subtleBg = (dark ? Colors.white : Colors.black).withValues(
+          alpha: dark ? 0.035 : 0.025,
+        );
+        final pillText = active == null
+            ? 'CodeBuddy 账号'
+            : (active.quota?.pillCreditsLabel ?? active.edition.label);
         final tooltip = active == null
-            ? 'CodeBuddy 账号（当前复用 CLI 默认登录态 · 点击添加或切换多账号）'
+            ? 'CodeBuddy 账号（当前复用 CLI 默认登录态 · 点击添加账号查看剩余积分）'
             : [
-                '${active.displayName} (${active.region.shortBadge} · ${active.edition.label})',
+                '${active.displayName} (${active.region.shortBadge} · ${active.quota?.subscriptionPackageName ?? active.edition.label})',
                 active.quota?.summaryLabel,
-                '点击查看详情或切换账号',
+                '点击查看积分明细或切换账号',
               ].whereType<String>().join(' · ');
 
         return Builder(
@@ -108,35 +137,54 @@ class _CodeBuddyAccountPickerState extends State<CodeBuddyAccountPicker> {
                 onTap: () => _openPopover(pillCtx),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 120),
-                  width: 26,
-                  height: 26,
-                  alignment: Alignment.center,
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(horizontal: 7.5),
                   decoration: BoxDecoration(
-                    color: hovered ? hoverBg : Colors.transparent,
-                    shape: BoxShape.circle,
+                    color: hovered ? hoverBg : subtleBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (dark ? Colors.white : Colors.black).withValues(
+                        alpha: hovered ? 0.12 : 0.06,
+                      ),
+                    ),
                   ),
-                  child: busy
-                      ? IdeSpinning(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (busy)
+                        IdeSpinning(
                           Icon(
                             Codicons.loading,
-                            size: 13.5,
+                            size: 12.5,
                             color: AppColors.textMuted,
                           ),
                         )
-                      : active == null
-                      ? Icon(
+                      else if (active == null)
+                        Icon(
                           Codicons.account,
-                          size: 14,
+                          size: 13,
                           color: hovered ? AppColors.text : AppColors.textMuted,
                         )
-                      : Opacity(
-                          opacity: hovered ? 1.0 : 0.9,
-                          child: CodeBuddyQuotaRing(
-                            fraction: active.quota?.remainingFraction ?? 1.0,
-                            size: 14.5,
-                            strokeWidth: 1.95,
-                          ),
+                      else
+                        CodeBuddyQuotaRing(
+                          fraction: active.quota?.remainingFraction ?? 1.0,
+                          size: 13.5,
+                          strokeWidth: 1.9,
                         ),
+                      const SizedBox(width: 5.5),
+                      Text(
+                        pillText,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: active?.quota?.quotaExhausted == true
+                              ? const Color(0xFFDC3E3E)
+                              : (hovered ? AppColors.text : AppColors.textMuted),
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -161,7 +209,7 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
-    const width = 330.0;
+    const width = 346.0;
     final left = (anchor.right - width)
         .clamp(12.0, math.max(12.0, screen.width - width - 12.0))
         .toDouble();
@@ -198,6 +246,11 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
                 final refreshing =
                     store.isRefreshingAll ||
                     (active != null && store.isRefreshing(active.id));
+                final quota = active?.quota;
+                final remain = quota?.effectiveRemainingCredits;
+                final total = quota?.totalCredits;
+                final pct = quota?.percentage ?? 100;
+                final barColor = CodeBuddyQuotaRing.colorForPercentage(pct);
 
                 return Container(
                   decoration: BoxDecoration(
@@ -224,7 +277,7 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'CodeBuddy 账号与配额',
+                                'CodeBuddy 账号与积分',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -232,17 +285,27 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (active != null)
+                            if (active != null) ...[
+                              _IconAction(
+                                icon: Codicons.linkExternal,
+                                tooltip: '打开网页端套餐与积分明细',
+                                onTap: () => unawaited(
+                                  openExternal(
+                                    quota?.upgradeUrl ?? active.region.planUrl,
+                                  ),
+                                ),
+                              ),
                               _IconAction(
                                 icon: Codicons.refresh,
                                 spinning: refreshing,
-                                tooltip: '刷新账号与套餐状态',
+                                tooltip: '刷新剩余积分与套餐状态',
                                 onTap: refreshing
                                     ? null
                                     : () => unawaited(
                                         store.refreshQuota(active.id),
                                       ),
                               ),
+                            ],
                             if (onManageAccounts != null)
                               _IconAction(
                                 icon: Codicons.settingsGear,
@@ -269,7 +332,7 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '你可以直接在设置中添加多个中国版 (CN) / 国际版 (AI) OAuth 或 API Key 账号，实现一键切号与配额监控。',
+                                '在设置中一键授权登录中国版 (CN) 或国际版 (AI) 账号后，即可实时查看当前账号剩余积分、资源包明细与一键切号。',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: subColor,
@@ -347,35 +410,179 @@ class _CodeBuddyUsagePopover extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      active.quota?.summaryLabel ??
-                                          '${active.edition.label} · 就绪',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: subColor,
+                              const SizedBox(height: 10),
+                              // Remaining Credits Box
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: (dark ? Colors.white : Colors.black)
+                                      .withValues(alpha: dark ? 0.04 : 0.025),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: border.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '当前剩余积分',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: subColor,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        if (quota?.subscriptionPackageName
+                                            case final subName?
+                                            when subName.isNotEmpty)
+                                          Text(
+                                            subName,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: barColor,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          quota?.unlimited == true
+                                              ? '不限积分'
+                                              : remain != null
+                                              ? formatBalanceCredits(remain)
+                                              : '—',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                            color: titleColor,
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                        if (total != null && total > 0) ...[
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '/ ${formatBalanceCredits(total)} 积分',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: subColor,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                        const Spacer(),
+                                        if (total != null && total > 0)
+                                          Text(
+                                            '$pct%',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: barColor,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    if (total != null && total > 0) ...[
+                                      const SizedBox(height: 7),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(3),
+                                        child: LinearProgressIndicator(
+                                          value:
+                                              quota?.remainingFraction ?? 1.0,
+                                          minHeight: 4.5,
+                                          backgroundColor:
+                                              (dark
+                                                      ? Colors.white
+                                                      : Colors.black)
+                                                  .withValues(alpha: 0.09),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                barColor,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                    if (quota != null &&
+                                        quota.packages.length > 1) ...[
+                                      const SizedBox(height: 8),
+                                      for (final pkg in quota.packages)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 2.5,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  pkg.displayTitle,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: subColor,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                '${formatBalanceCredits(pkg.remain)} / ${formatBalanceCredits(pkg.total)}',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: titleColor.withValues(
+                                                    alpha: 0.85,
+                                                  ),
+                                                  fontFeatures: const [
+                                                    FontFeature.tabularFigures(),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if ((quota?.turnCount ?? 0) > 0 ||
+                                  (quota?.sessionCreditsUsed ?? 0) > 0) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Codicons.sparkle,
+                                      size: 11.5,
+                                      color: subColor,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Expanded(
+                                      child: Text(
+                                        '本机已对话 ${quota!.turnCount} 轮 · 累计消耗 ${formatConsumedCredits(quota.sessionCreditsUsed)} 积分',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: subColor,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  CodeBuddyQuotaRing(
-                                    fraction:
-                                        active.quota?.remainingFraction ?? 1.0,
-                                    size: 17,
-                                    strokeWidth: 2.0,
-                                  ),
-                                ],
-                              ),
-                              if ((active.quota?.turnCount ?? 0) > 0) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  '已执行 ${active.quota!.turnCount} 轮 · 累计 Credits ${active.quota!.sessionCreditsUsed.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: subColor.withValues(alpha: 0.85),
-                                  ),
+                                  ],
                                 ),
                               ],
                             ],
@@ -453,6 +660,7 @@ class _AccountSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = themeColors.dark;
+    final rem = account.quota?.effectiveRemainingCredits;
     return HoverBuilder(
       cursor: onTap != null
           ? SystemMouseCursors.click
@@ -490,6 +698,17 @@ class _AccountSwitchTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (rem != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '${formatBalanceCredits(rem)} 积分',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: subColor,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
               const SizedBox(width: 6),
               CodeBuddyRegionBadge(region: account.region),
               const SizedBox(width: 4),
