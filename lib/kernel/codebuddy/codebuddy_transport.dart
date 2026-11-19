@@ -131,10 +131,13 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   double _turnCreditsReported = 0.0;
   int _turnTokensReported = 0;
   bool _turnInFlight = false;
+  bool _hasSentTurnOnProcess = false;
+  bool _suppressingResumeReplay = false;
   bool _needsAccountRespawn = false;
   bool _closed = false;
   bool _recycling = false;
   String? _pendingCustomTitle;
+  Map<String, Object?>? _lastInitializeRequest;
 
   final List<String> _stderr = [];
   static const int _maxStderrLines = 30;
@@ -142,7 +145,6 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
   final Set<String> _internalControlIds = {};
   final List<String> _pendingClientUserUuids = [];
   final Map<String, String> _clientToCliUserUuid = {};
-  String? _currentTurnClientUuid;
   final Map<
     String,
     ({
@@ -340,6 +342,8 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
         runInShell: cli.throughShell,
       );
       _process = proc;
+      _hasSentTurnOnProcess = false;
+      _suppressingResumeReplay = false;
       _needsAccountRespawn = false;
       unawaited(registry.add(proc.pid));
 
@@ -403,6 +407,22 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       }
       if (!_closed) {
         await _spawnProcess();
+        if (_lastInitializeRequest case final prevInit?) {
+          final reinitId = '_cyte_reinit_${++_internalSeq}';
+          _internalControlIds.add(reinitId);
+          _writeRaw({
+            'type': 'control_request',
+            'request_id': reinitId,
+            'request': {
+              'subtype': 'initialize',
+              'hasPrompt': true,
+              if (prevInit['sdkMcpServers'] != null)
+                'sdkMcpServers': prevInit['sdkMcpServers'],
+              if (prevInit['capabilities'] != null)
+                'capabilities': prevInit['capabilities'],
+            },
+          });
+        }
       }
     } finally {
       _recycling = false;
@@ -464,7 +484,48 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       final handled = _handleControlResponse(decoded);
       if (handled == null) return;
       decoded = handled;
-    } else if (type == 'user') {
+      if (!_closed && !_messages.isClosed) {
+        _messages.add(decoded);
+      }
+      return;
+    }
+    if (type == 'control_request') {
+      if (!_closed && !_messages.isClosed) {
+        _messages.add(decoded);
+      }
+      return;
+    }
+
+    // Defense-in-depth: suppress any startup `renderHistory()` burst emitted by
+    // `codebuddy --resume` before a live user turn is sent on this process.
+    if (_suppressingResumeReplay) {
+      if (type == 'result') {
+        _suppressingResumeReplay = false;
+      }
+      return;
+    }
+    if (type == 'system' &&
+        decoded['subtype'] == 'init' &&
+        decoded['model'] == 'unknown' &&
+        (decoded['tools'] as List?)?.isEmpty == true) {
+      _suppressingResumeReplay = true;
+      return;
+    }
+    if (!_hasSentTurnOnProcess &&
+        _sessionId != null &&
+        _sessionId!.isNotEmpty &&
+        (type == 'user' ||
+            type == 'assistant' ||
+            type == 'stream_event' ||
+            type == 'file-history-snapshot' ||
+            type == 'ai-title' ||
+            type == 'topic' ||
+            type == 'result' ||
+            (type == 'system' && decoded['subtype'] == 'usage_update'))) {
+      return;
+    }
+
+    if (type == 'user') {
       final reconciled = _reconcileUserEcho(decoded);
       if (reconciled == null) return;
       decoded = reconciled;
@@ -656,7 +717,6 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
     final cliUuid = decoded['uuid'] as String?;
     if (cliUuid != null && _pendingClientUserUuids.remove(cliUuid)) {
-      _currentTurnClientUuid = cliUuid;
       if (!_closed && !_messages.isClosed) {
         _messages.add({
           'type': 'command_lifecycle',
@@ -669,7 +729,6 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
     if (_pendingClientUserUuids.isNotEmpty) {
       final clientUuid = _pendingClientUserUuids.removeAt(0);
-      _currentTurnClientUuid = clientUuid;
       if (cliUuid != null && cliUuid.isNotEmpty) {
         _clientToCliUserUuid[clientUuid] = cliUuid;
       }
@@ -683,7 +742,7 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       return {...decoded, 'uuid': clientUuid};
     }
 
-    if (decoded['isReplay'] == true && _currentTurnClientUuid != null) {
+    if (decoded['isReplay'] == true) {
       return null;
     }
 
@@ -745,7 +804,6 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
   Map<String, Object?> _onTurnResult(Map<String, Object?> decoded) {
     _turnInFlight = false;
-    _currentTurnClientUuid = null;
     final isError = decoded['is_error'] == true;
     final resultText = '${decoded['result'] ?? ''}'.toLowerCase();
     final quotaExhausted =
@@ -855,10 +913,14 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
       _turnTokensReported = 0;
       if (_needsAccountRespawn) {
         unawaited(
-          _recycleProcess().then((_) => _writeRaw(message)),
+          _recycleProcess().then((_) {
+            _hasSentTurnOnProcess = true;
+            _writeRaw(message);
+          }),
         );
         return;
       }
+      _hasSentTurnOnProcess = true;
     }
     _writeRaw(message);
   }
@@ -883,12 +945,14 @@ class CodeBuddyTransport implements ClaudeCodeTransport {
 
     switch (subtype) {
       case 'initialize':
+        _lastInitializeRequest = request;
         _initializeRequestIds.add(requestId);
         _writeRaw({
           'type': 'control_request',
           'request_id': requestId,
           'request': {
             'subtype': 'initialize',
+            'hasPrompt': true,
             if (request['sdkMcpServers'] != null)
               'sdkMcpServers': request['sdkMcpServers'],
             if (request['capabilities'] != null)

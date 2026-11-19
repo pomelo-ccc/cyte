@@ -327,12 +327,16 @@ String _fork(
     for (final line in const LineSplitter().convert(file.readAsStringSync()))
       ?_decode(line),
   ];
+  String? idOf(Map<String, Object?> entry) =>
+      (entry['uuid'] ?? entry['id']) as String?;
+  String? parentOf(Map<String, Object?> entry) =>
+      (entry['parentUuid'] ?? entry['logicalParentUuid'] ?? entry['parentId'])
+          as String?;
+  bool keptEntry(Map<String, Object?> entry) => _kept(_normalizeEntry(entry));
   final byId = <String, Map<String, Object?>>{
     for (final entry in entries)
-      if (entry['uuid'] case final String uuid) uuid: entry,
+      if (idOf(entry) case final String id) id: entry,
   };
-  String? parentOf(Map<String, Object?> entry) =>
-      (entry['parentUuid'] ?? entry['logicalParentUuid']) as String?;
   final Map<String, Object?>? leaf;
   if (before != null) {
     final cut = byId[before];
@@ -344,7 +348,7 @@ String _fork(
   } else {
     leaf = entries.reversed
         .where(
-          (e) => _kept(e) && e['isSidechain'] != true && e['uuid'] is String,
+          (e) => keptEntry(e) && e['isSidechain'] != true && idOf(e) != null,
         )
         .firstOrNull;
   }
@@ -353,7 +357,8 @@ String _fork(
   final chain = <Map<String, Object?>>[];
   final seen = <String>{};
   for (var entry = leaf; entry != null;) {
-    if (!seen.add(entry['uuid'] as String)) break;
+    final entryId = idOf(entry);
+    if (entryId == null || !seen.add(entryId)) break;
     chain.add(entry);
     entry = switch (parentOf(entry)) {
       final parent? => byId[parent],
@@ -361,9 +366,21 @@ String _fork(
     };
   }
   if (chain.isEmpty) throw StateError('Nothing to fork in session $id');
+  final snapshotsByMsg = <String, List<Map<String, Object?>>>{};
+  for (final entry in entries) {
+    if (entry['type'] == 'file-history-snapshot' &&
+        entry['messageId'] is String) {
+      (snapshotsByMsg[entry['messageId'] as String] ??= []).add(entry);
+    }
+  }
   final out = StringBuffer();
   for (final entry in chain.reversed) {
     out.writeln(jsonEncode({...entry, 'sessionId': into}));
+    if (entry['id'] case final String cbcId) {
+      for (final snap in snapshotsByMsg[cbcId] ?? const []) {
+        out.writeln(jsonEncode(snap));
+      }
+    }
   }
   if (title != null && title.trim().isNotEmpty) {
     out.writeln(
@@ -512,7 +529,7 @@ class _SummaryCache {
   _SummaryCache._(this._path, this._root, this._old);
 
   /// Raise it whenever [_Summary] makes something else of a file.
-  static const _version = 5;
+  static const _version = 6;
 
   factory _SummaryCache.load(String path, String root) {
     var old = const <String, Object?>{};
@@ -759,7 +776,15 @@ class _Summary {
     (int, int)? generated;
     final said = ListQueue<(int, int)>();
     void line(Uint8List bytes, int start, int end) {
-      if (prompt == null && _has(bytes, _userType)) {
+      if (cwd == null && _has(bytes, _cwdMarker)) {
+        if (_Lines._decode(bytes, 0, bytes.length) case {'cwd': final String d}
+            when d.isNotEmpty) {
+          cwd = d;
+        }
+      }
+      if (prompt == null &&
+          (_has(bytes, _userType) ||
+              (_has(bytes, _cbcMessageType) && _has(bytes, _cbcUserRole)))) {
         if (_Lines._decode(bytes, 0, bytes.length) case final entry?) {
           cwd ??= entry['cwd'] as String?;
           if (entry['isSidechain'] != true && entry['isMeta'] != true) {
@@ -775,7 +800,9 @@ class _Summary {
       if (_has(bytes, _customTitleType)) named = (start, end);
       if (_has(bytes, _aiTitleType)) generated = (start, end);
       if (_has(bytes, _timestamp) &&
-          (_has(bytes, _userType) || _has(bytes, _assistantType))) {
+          (_has(bytes, _userType) ||
+              _has(bytes, _assistantType) ||
+              _has(bytes, _cbcMessageType))) {
         said.add((start, end));
         // Each one reads, but for a line cut short.
         if (said.length > 16) said.removeFirst();
@@ -857,6 +884,9 @@ class _Summary {
 
   static final _userType = utf8.encode('"type":"user"');
   static final _assistantType = utf8.encode('"type":"assistant"');
+  static final _cbcMessageType = utf8.encode('"type":"message"');
+  static final _cbcUserRole = utf8.encode('"role":"user"');
+  static final _cwdMarker = utf8.encode('"cwd"');
   static final _customTitleType = utf8.encode('"type":"custom-title"');
   static final _aiTitleType = utf8.encode('"type":"ai-title"');
   static final _timestamp = utf8.encode('"timestamp"');
@@ -952,7 +982,9 @@ List<Map<String, Object?>> _branch(String path) {
   )) {
     if (line.isEmpty) continue;
     try {
-      entries.add((jsonDecode(line) as Map).cast<String, Object?>());
+      entries.add(
+        _normalizeEntry((jsonDecode(line) as Map).cast<String, Object?>()),
+      );
     } on Object {
       continue;
     }
@@ -1072,7 +1104,7 @@ class _Lines {
     if (end <= start) return null;
     try {
       final entry = _json.convert(Uint8List.sublistView(bytes, start, end));
-      return entry is Map ? entry.cast<String, Object?>() : null;
+      return entry is Map ? _normalizeEntry(entry.cast<String, Object?>()) : null;
     } on Object {
       return null;
     }
@@ -1320,3 +1352,380 @@ bool _kept(Map<String, Object?> entry) => switch (entry['type']) {
   },
   _ => false,
 };
+
+final _cbcSystemReminder = RegExp(
+  r'<system-reminder\b[^>]*(?:/>\s*|>[\s\S]*?</system-reminder>\s*)',
+);
+final _cbcProtectedRange = RegExp(
+  r'<user_query>[\s\S]*?</user_query>|```[\s\S]*?```',
+);
+final _cbcDataUri = RegExp(r'^data:([^;,]+);base64,([\s\S]+)$');
+
+String _stripCbcSystemReminders(String input) {
+  if (!input.contains('<system-reminder')) return input;
+  final matches = _cbcProtectedRange.allMatches(input).toList();
+  if (matches.isEmpty) {
+    return input.replaceAll(_cbcSystemReminder, '');
+  }
+  final out = StringBuffer();
+  var cursor = 0;
+  for (final m in matches) {
+    if (m.start > cursor) {
+      out.write(
+        input.substring(cursor, m.start).replaceAll(_cbcSystemReminder, ''),
+      );
+    }
+    out.write(input.substring(m.start, m.end));
+    cursor = m.end;
+  }
+  if (cursor < input.length) {
+    out.write(input.substring(cursor).replaceAll(_cbcSystemReminder, ''));
+  }
+  return out.toString();
+}
+
+(Map<String, Object?>?, double?) _extractCbcUsageAndCredit(
+  Map<String, Object?>? providerData,
+) {
+  if (providerData == null) return (null, null);
+  final usage = (providerData['usage'] as Map?)?.cast<String, Object?>();
+  final rawUsage = (providerData['rawUsage'] as Map?)?.cast<String, Object?>();
+  if (usage == null && rawUsage == null) return (null, null);
+
+  final rawCredit = rawUsage?['credit'] ?? providerData['credit'];
+  final credit = switch (rawCredit) {
+    final num n when n.toDouble() > 0 => n.toDouble(),
+    final String s => double.tryParse(s.trim()),
+    _ => null,
+  };
+
+  int? intVal(Object? v) => switch (v) {
+    final int i => i,
+    final num n => n.toInt(),
+    _ => null,
+  };
+
+  var cacheRead =
+      intVal(rawUsage?['cache_read_input_tokens']) ??
+      intVal(usage?['cacheReadInputTokens']) ??
+      0;
+  if (cacheRead == 0 && usage?['inputTokensDetails'] is List) {
+    for (final detail in usage!['inputTokensDetails'] as List) {
+      if (detail is Map) {
+        cacheRead += intVal(detail['cached_tokens']) ?? 0;
+      }
+    }
+  }
+  final cacheCreate =
+      intVal(rawUsage?['cache_creation_input_tokens']) ??
+      intVal(usage?['cacheCreationInputTokens']) ??
+      0;
+  final totalInput =
+      intVal(usage?['inputTokens']) ??
+      intVal(rawUsage?['input_tokens']) ??
+      intVal(rawUsage?['prompt_tokens']) ??
+      0;
+  final outputTokens =
+      intVal(usage?['outputTokens']) ??
+      intVal(rawUsage?['output_tokens']) ??
+      intVal(rawUsage?['completion_tokens']) ??
+      0;
+
+  if (totalInput <= 0 && outputTokens <= 0 && cacheRead <= 0 && cacheCreate <= 0) {
+    return (null, credit != null && credit > 0 ? credit : null);
+  }
+  final uncachedInput = math.max(0, totalInput - cacheRead - cacheCreate);
+  return (
+    <String, Object?>{
+      'input_tokens': uncachedInput,
+      'output_tokens': outputTokens,
+      if (cacheRead > 0) 'cache_read_input_tokens': cacheRead,
+      if (cacheCreate > 0) 'cache_creation_input_tokens': cacheCreate,
+    },
+    credit != null && credit > 0 ? credit : null,
+  );
+}
+
+/// Normalizes a CodeBuddy CLI (`.codebuddy/projects/*.jsonl`) `AgentInputItem`
+/// entry into the Claude `stream-json` entry schema expected by [ClaudeSessions]
+/// and `ClaudeTranslator`, while returning native Claude Code entries untouched.
+Map<String, Object?> _normalizeEntry(Map<String, Object?> entry) {
+  final type = entry['type'];
+  if (entry['uuid'] is String ||
+      type == 'user' ||
+      type == 'assistant' ||
+      type == 'system' ||
+      type == 'attachment') {
+    return entry;
+  }
+  final id = entry['id'];
+  if (id is! String || id.isEmpty) return entry;
+
+  final parentId = entry['parentId'] as String?;
+  final ts = switch (entry['timestamp']) {
+    final int ms => DateTime.fromMillisecondsSinceEpoch(
+      ms,
+      isUtc: true,
+    ).toIso8601String(),
+    final num ms => DateTime.fromMillisecondsSinceEpoch(
+      ms.toInt(),
+      isUtc: true,
+    ).toIso8601String(),
+    final String s when s.isNotEmpty => s,
+    _ => null,
+  };
+  final providerData =
+      (entry['providerData'] as Map?)?.cast<String, Object?>();
+  final isMeta =
+      providerData?['isMeta'] == true ||
+      providerData?['isCompactInternal'] == true ||
+      providerData?['agent'] == 'compact';
+
+  switch (type) {
+    case 'message' when entry['role'] == 'user':
+      final rawContent = entry['content'];
+      final blocks = <Map<String, Object?>>[];
+      if (rawContent is String) {
+        final cleaned = _stripCbcSystemReminders(rawContent).trim();
+        if (cleaned.isNotEmpty) {
+          blocks.add({'type': 'text', 'text': cleaned});
+        }
+      } else if (rawContent is List) {
+        for (final item in rawContent) {
+          if (item is! Map) continue;
+          final bType = item['type'];
+          if (bType == 'input_text' || bType == 'text') {
+            final rawText = item['text'] as String? ?? '';
+            final cleaned = _stripCbcSystemReminders(rawText).trim();
+            if (cleaned.isNotEmpty) {
+              blocks.add({'type': 'text', 'text': cleaned});
+            } else if (item['providerData'] case {
+              'acpResourceLink': {'uri': final String uri},
+            } when uri.isNotEmpty) {
+              blocks.add({'type': 'text', 'text': '@$uri'});
+            }
+          } else if (bType == 'input_image' && item['image'] is String) {
+            final img = item['image'] as String;
+            if (_cbcDataUri.firstMatch(img) case final m?) {
+              blocks.add({
+                'type': 'image',
+                'source': {
+                  'type': 'base64',
+                  'media_type': m.group(1)!.trim(),
+                  'data': m.group(2)!.trim(),
+                },
+              });
+            } else if (!img.startsWith('http://') &&
+                !img.startsWith('https://')) {
+              blocks.add({
+                'type': 'image',
+                'source': {
+                  'type': 'base64',
+                  'media_type': 'image/png',
+                  'data': img,
+                },
+              });
+            }
+          } else if (bType == 'image') {
+            blocks.add(item.cast<String, Object?>());
+          }
+        }
+      }
+      return {
+        'type': 'user',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+        if (entry['cwd'] is String) 'cwd': entry['cwd'],
+        if (isMeta || blocks.isEmpty) 'isMeta': true,
+        'message': {
+          'role': 'user',
+          'content': blocks,
+        },
+      };
+
+    case 'reasoning':
+      final parts = <String>[];
+      final rawList = entry['rawContent'] is List
+          ? entry['rawContent'] as List
+          : (entry['content'] is List ? entry['content'] as List : const []);
+      for (final b in rawList) {
+        if (b is Map &&
+            (b['type'] == 'reasoning_text' || b['type'] == 'input_text') &&
+            b['text'] is String) {
+          parts.add(b['text'] as String);
+        }
+      }
+      final thinkingText = parts.join();
+      final msgId = providerData?['messageId'] as String? ?? id;
+      return {
+        'type': 'assistant',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+        'message': {
+          'id': msgId,
+          'type': 'message',
+          'role': 'assistant',
+          'model': providerData?['model'] as String? ?? 'unknown',
+          'content': [
+            if (thinkingText.isNotEmpty)
+              {
+                'type': 'thinking',
+                'thinking': thinkingText,
+                'signature': providerData?['signature'] as String? ?? '',
+              },
+          ],
+        },
+      };
+
+    case 'function_call':
+      final callId = entry['callId'] as String? ?? id;
+      final name = entry['name'] as String? ?? 'unknown';
+      Map<String, Object?> parsedInput = const {};
+      switch (entry['arguments']) {
+        case final Map m:
+          parsedInput = m.cast<String, Object?>();
+        case final String s when s.trim().isNotEmpty:
+          try {
+            if (jsonDecode(s) case final Map m) {
+              parsedInput = m.cast<String, Object?>();
+            }
+          } on Object {
+            parsedInput = const {};
+          }
+      }
+      final (usageMap, credit) = _extractCbcUsageAndCredit(providerData);
+      return {
+        'type': 'assistant',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+        'cbcCredit': ?credit,
+        'message': {
+          'id': providerData?['messageId'] as String? ?? id,
+          'type': 'message',
+          'role': 'assistant',
+          'model': providerData?['model'] as String? ?? 'unknown',
+          'stop_reason': 'tool_use',
+          'content': [
+            {
+              'type': 'tool_use',
+              'id': callId,
+              'name': name,
+              'input': parsedInput,
+            },
+          ],
+          'usage': ?usageMap,
+        },
+      };
+
+    case 'function_call_result':
+      final callId = entry['callId'] as String? ?? '';
+      final output = entry['output'];
+      final contentBlocks = switch (output) {
+        final String s => <Map<String, Object?>>[
+          {'type': 'text', 'text': s},
+        ],
+        {'type': 'text', 'text': final String s} => <Map<String, Object?>>[
+          {'type': 'text', 'text': s},
+        ],
+        {
+          'type': 'image',
+          'image': final Map img,
+        } when img['data'] is String => <Map<String, Object?>>[
+          {
+            'type': 'image',
+            'source': {
+              'type': 'base64',
+              'media_type': img['mediaType'] as String? ?? 'image/png',
+              'data': img['data'] as String,
+            },
+          },
+        ],
+        null => const <Map<String, Object?>>[
+          {'type': 'text', 'text': ''},
+        ],
+        _ => <Map<String, Object?>>[
+          {'type': 'text', 'text': jsonEncode(output)},
+        ],
+      };
+      final isError =
+          entry['status'] == 'incomplete' || providerData?['error'] != null;
+      return {
+        'type': 'user',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+        'message': {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'tool_result',
+              'tool_use_id': callId,
+              'content': contentBlocks,
+              'is_error': isError,
+            },
+          ],
+        },
+      };
+
+    case 'message' when entry['role'] == 'assistant':
+      final rawContent = entry['content'];
+      final blocks = <Map<String, Object?>>[];
+      if (rawContent is String) {
+        if (rawContent.isNotEmpty) {
+          blocks.add({'type': 'text', 'text': rawContent});
+        }
+      } else if (rawContent is List) {
+        for (final item in rawContent) {
+          if (item is! Map) continue;
+          switch (item['type']) {
+            case 'output_text' || 'text':
+              final t = item['text'] as String? ?? '';
+              if (t.isNotEmpty) blocks.add({'type': 'text', 'text': t});
+            case 'reasoning' || 'thinking':
+              final t =
+                  (item['thinking'] ?? item['text']) as String? ?? '';
+              if (t.isNotEmpty) {
+                blocks.add({
+                  'type': 'thinking',
+                  'thinking': t,
+                  'signature': item['signature'] as String? ?? '',
+                });
+              }
+            default:
+              blocks.add(item.cast<String, Object?>());
+          }
+        }
+      }
+      final (usageMap, credit) = _extractCbcUsageAndCredit(providerData);
+      return {
+        'type': 'assistant',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+        'cbcCredit': ?credit,
+        'message': {
+          'id': providerData?['messageId'] as String? ?? id,
+          'type': 'message',
+          'role': 'assistant',
+          'model': providerData?['model'] as String? ?? 'unknown',
+          'content': blocks,
+          'usage': ?usageMap,
+        },
+      };
+
+    case 'compaction':
+      return {
+        'type': 'system',
+        'subtype': 'compact_boundary',
+        'uuid': id,
+        'parentUuid': ?parentId,
+        'timestamp': ?ts,
+      };
+
+    default:
+      return entry;
+  }
+}

@@ -395,6 +395,10 @@ class ClaudeTranslator {
   /// The user stopped the replayed turn: timed all the same, to where it
   /// stopped, and marked so (see [UserMessageItem.stopped]).
   bool _replayedStopped = false;
+  double _replayedCredits = 0.0;
+  int _replayedInputTokens = 0;
+  int _replayedOutputTokens = 0;
+  final Set<String> _replayedUsageMsgIds = {};
 
   /// What is replayed is still of a turn whose prompt is on an earlier page:
   /// no prompt yet, nor the agent taking up a notice of its own.
@@ -449,6 +453,28 @@ class ClaudeTranslator {
     }
     if (message['uuid'] == _replayed!.id) return;
     if (at != null) _replayedUntil = at;
+    if (message['type'] == 'assistant') {
+      final body = message['message'];
+      final msgId = body is Map ? body['id'] as String? : null;
+      final dedupKey = msgId ?? (message['uuid'] as String? ?? '');
+      if (message['cbcCredit'] case final num c when c.toDouble() > 0) {
+        if (dedupKey.isEmpty || _replayedUsageMsgIds.add('c:$dedupKey')) {
+          _replayedCredits += c.toDouble();
+        }
+      }
+      if (body is Map && body['usage'] is Map) {
+        if (dedupKey.isEmpty || _replayedUsageMsgIds.add('u:$dedupKey')) {
+          final u = body['usage'] as Map;
+          final inp =
+              ((u['input_tokens'] as num?)?.toInt() ?? 0) +
+              ((u['cache_read_input_tokens'] as num?)?.toInt() ?? 0) +
+              ((u['cache_creation_input_tokens'] as num?)?.toInt() ?? 0);
+          final out = (u['output_tokens'] as num?)?.toInt() ?? 0;
+          if (inp > _replayedInputTokens) _replayedInputTokens = inp;
+          _replayedOutputTokens += out;
+        }
+      }
+    }
   }
 
   /// Replaying [id], a prompt: times the turn before it.
@@ -469,24 +495,57 @@ class ClaudeTranslator {
     final turn = _replayed;
     final until = _replayedUntil;
     final stopped = _replayedStopped;
+    final credits = _replayedCredits;
+    final inputTokens = _replayedInputTokens;
+    final outputTokens = _replayedOutputTokens;
     _headOpen = false;
     _replayed = null;
     _replayedUntil = null;
     _replayedStopped = false;
+    _replayedCredits = 0.0;
+    _replayedInputTokens = 0;
+    _replayedOutputTokens = 0;
+    _replayedUsageMsgIds.clear();
     if (turn == null) return;
+    final fallbackUsage =
+        (credits > 0 || inputTokens > 0 || outputTokens > 0)
+        ? TurnUsage(
+            inputTokens: inputTokens > 0 ? inputTokens : null,
+            outputTokens: outputTokens > 0 ? outputTokens : null,
+            credits: credits > 0 ? credits : null,
+          )
+        : null;
     // As its footer showed it when it ended, where that was kept.
     if (keptTurns[turn.id] case (:final worked, :final usage)) {
+      final mergedUsage =
+          (usage != null && usage.credits == null && credits > 0)
+          ? TurnUsage(
+              inputTokens: usage.inputTokens ?? fallbackUsage?.inputTokens,
+              outputTokens: usage.outputTokens ?? fallbackUsage?.outputTokens,
+              costUsd: usage.costUsd,
+              credits: credits,
+            )
+          : (usage ?? fallbackUsage);
       _put(
         turn.id,
-        turn.item.copyWith(worked: worked, usage: usage, stopped: stopped),
+        turn.item.copyWith(worked: worked, usage: mergedUsage, stopped: stopped),
       );
       return;
     }
     final at = turn.at;
-    if (until == null || at == null) return;
-    final worked = until.difference(at);
-    if (worked > Duration.zero) {
-      _put(turn.id, turn.item.copyWith(worked: worked, stopped: stopped));
+    final worked =
+        (until != null && at != null && until.isAfter(at))
+        ? until.difference(at)
+        : null;
+    if (worked != null || fallbackUsage != null) {
+      _put(
+        turn.id,
+        turn.item.copyWith(
+          worked: worked,
+          usage: fallbackUsage,
+          stopped: stopped,
+        ),
+      );
     }
   }
 

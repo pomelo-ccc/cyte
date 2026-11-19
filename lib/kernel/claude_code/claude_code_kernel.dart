@@ -3108,12 +3108,23 @@ class ClaudeCodeKernel
       var counted = false;
       var whole = page.earlier == null;
       String? lastHistoryModel;
+      var cbcPageCredits = 0.0;
+      final seenCreditMsgIds = <String>{};
       for (final line in page.entries) {
         if (line['type'] == 'assistant') {
           counted |= _countRequest(line);
-          if (line['message'] case {'model': final String m}
-              when m.trim().isNotEmpty) {
+          final msgBody = line['message'];
+          if (msgBody case {'model': final String m}
+              when m.trim().isNotEmpty && m.trim() != 'unknown') {
             lastHistoryModel = m.trim();
+          }
+          if (line['cbcCredit'] case final num c when c.toDouble() > 0) {
+            final msgId =
+                (msgBody is Map ? msgBody['id'] as String? : null) ??
+                (line['uuid'] as String? ?? '');
+            if (msgId.isEmpty || seenCreditMsgIds.add(msgId)) {
+              cbcPageCredits += c.toDouble();
+            }
           }
         }
         _results.add(line);
@@ -3123,6 +3134,9 @@ class ClaudeCodeKernel
           whole = true;
         }
         _translator.translate(line);
+      }
+      if (_credits == null && cbcPageCredits > 0) {
+        _credits = cbcPageCredits;
       }
       if (!_hasExplicitSessionModel && lastHistoryModel != null) {
         _restoreModelFromHistory(lastHistoryModel);

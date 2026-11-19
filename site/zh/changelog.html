@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BaoCode 更新日志</title>
+<meta name="description" content="BaoCode 每个版本的变化。">
+<link rel="icon" href="/icon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
+<link rel="alternate" hreflang="en" href="https://baocode.dev/changelog">
+<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/changelog">
+</head>
+<body>
+<!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
+<canvas class="grid" aria-hidden="true"></canvas>
+<svg class="sprite" aria-hidden="true">
+  <!-- Lucide (ISC), https://lucide.dev -->
+  <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
+</svg>
+<header class="top">
+  <a class="brand" href="/zh/"><img src="/icon.png" alt="">BaoCode</a>
+  <a href="/zh/download">下载</a>
+  <a href="/zh/changelog" aria-current="page">更新日志</a>
+  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a class="lang" href="/changelog" hreflang="en" lang="en">English</a>
+</header>
+
+<main class="page changelog">
+  <h1>更新日志</h1>
+  <p class="subtitle">BaoCode 每个版本的变化。</p>
+
+  <section class="release" id="v2.0.5">
+    <h2 class="plain"><a href="#v2.0.5">2.0.5</a></h2>
+    <h3>问题修复</h3>
+    <ul>
+    <li><strong>修复会话恢复/重连时历史用户消息重复渲染</strong>：在 <code>initialize</code> 握手中携带 <code>hasPrompt: true</code>，并增加 <code>--resume</code> 启动历史回放（<code>renderHistory</code>）与迟到 <code>isReplay</code> 回显帧的多重拦截，彻底消除恢复会话、标签页唤醒或切换账号时在底部重复追加整段历史用户消息的问题。</li>
+    <li><strong>完整支持 CodeBuddy <code>.jsonl</code> 本地会话读取与恢复</strong>：兼容 <code>~/.codebuddy/projects/*.jsonl</code> 的会话记录结构（消息、思考链、工具调用与返回、会话自定义标题及每轮消耗积分），重启应用后侧边栏会话列表与历史记录完整展示不丢失。</li>
+    </ul>
+  </section>
+
+  <section class="release" id="v2.0.4">
+    <h2 class="plain"><a href="#v2.0.4">2.0.4</a></h2>
+    <h3>新增与优化</h3>
+    <ul>
+    <li><strong>思考强度 100% 对齐 WorkBuddy</strong>：实时拉取 <code>get_available_models.rawModels</code>，按官方规则支持 <code>思考模式</code> 开关及 <code>低 / 中 / 高 / 超高 / 极致</code> 五档思考强度，模型菜单右侧同步展示积分消耗倍率（如 <code>0.29x</code>、<code>0.00x</code>）。</li>
+    <li><strong>当前账号剩余积分实时展示</strong>：对接官方 <code>get-user-resource-summary</code> 与企业计费接口，在输入框工具栏胶囊与账号弹窗中直接显示当前账号剩余积分、总额度进度条及各资源包明细。</li>
+    <li><strong>每次对话消耗积分展示</strong>：每轮对话结束在消息底部统计栏直接显示 <code>消耗 x.xx 积分</code>，并在上下文用量弹窗同步汇总会话消耗积分。</li>
+    </ul>
+    <h3>问题修复</h3>
+    <ul>
+    <li>修复 CodeBuddy CLI 在 <code>--replay-user-messages</code> 模式下回显 UUIDv7 导致发送消息显示两条重复气泡的问题。</li>
+    </ul>
+  </section>
+
+  <section class="release" id="v2.0.2">
+    <h2 class="plain"><a href="#v2.0.2">2.0.2</a></h2>
+    <h3>Cyte 2.0.2 更新说明</h3>
+    <ul>
+    <li><strong>原生对接腾讯 CodeBuddy (<code>codebuddy</code> / <code>cbc</code>)</strong>：常驻多轮 <code>stream-json</code> 进程直连，完整支持中国版 CN（Hunyuan 2.0、GLM-5.1、DeepSeek V3.2、Kimi K2.5、MiniMax M2.5）、国际版 AI（Claude 4.6、GPT-5.4、Gemini 3.1）、iOA、企业专享版及 <code>~/.codebuddy/models.json</code> 自定义模型。</li>
+    <li><strong>CodeBuddy 多账号 OAuth 与积分中心</strong>：内置中国版 / 国际版官方浏览器 OAuth 授权、API Key 账号、Token/JSON 批量导入导出、套餐查询、实时每轮 Credits 统计与配额耗尽自动切号。</li>
+    <li><strong>温润极简工作台与全平台签名安装包</strong>：极简细线条侧边栏、纯图标模式选择器、高对比上下文进度环、自定义主题工坊，以及 macOS / Windows / Linux 全平台签名自动更新包。</li>
+    </ul>
+    <blockquote>
+    <p><strong>macOS 首次打开提示</strong>：若未配置 Apple 开发者公证，其它 Mac 下载拖入 <code>Applications</code> 后若提示无法打开，在终端执行一次 <code>xattr -cr /Applications/Cyte.app</code> 即可正常启动。</p>
+    </blockquote>
+  </section>
+</main>
+
+<script src="/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BaoCode Changelog</title>
+<meta name="description" content="What changed in each version of BaoCode.">
+<link rel="icon" href="/icon.png">
+<link rel="stylesheet" href="/style.css">
+<script src="/head.js"></script>
+<link rel="alternate" hreflang="en" href="https://baocode.dev/changelog">
+<link rel="alternate" hreflang="zh" href="https://baocode.dev/zh/changelog">
+</head>
+<body>
+<!-- Made by tool/build_changelog.dart from release-notes/: edit those, not this. -->
+<canvas class="grid" aria-hidden="true"></canvas>
+<svg class="sprite" aria-hidden="true">
+  <!-- Lucide (ISC), https://lucide.dev -->
+  <symbol id="ic-github" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></g></symbol>
+</svg>
+<header class="top">
+  <a class="brand" href="/"><img src="/icon.png" alt="">BaoCode</a>
+  <a href="/download">Download</a>
+  <a href="/changelog" aria-current="page">Changelog</a>
+  <a href="https://github.com/baocode-dev/baocode"><svg class="ic" aria-hidden="true"><use href="#ic-github"/></svg>GitHub</a>
+  <a class="lang" href="/zh/changelog" hreflang="zh" lang="zh-CN">中文</a>
+</header>
+
+<main class="page changelog">
+  <h1>Changelog</h1>
+  <p class="subtitle">What changed in each version of BaoCode.</p>
+
+  <section class="release" id="v2.0.5">
+    <h2 class="plain"><a href="#v2.0.5">2.0.5</a></h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li><strong>Eliminated Duplicate Historical User Bubbles on Session Resume</strong>: Passes <code>hasPrompt: true</code> during <code>initialize</code> handshake and adds multi-layer filtering for startup <code>renderHistory()</code> bursts and stray <code>isReplay</code> echoes, preventing historical user messages from being re-appended at the bottom of the chat on session resume, tab wake-up, or account switch.</li>
+    <li><strong>Full CodeBuddy <code>.jsonl</code> Session History &amp; Sidebar Support</strong>: Parses <code>~/.codebuddy/projects/*.jsonl</code> transcripts (user/assistant messages, reasoning, tool calls &amp; results, custom titles, and per-turn consumed credits) so sessions persist cleanly across app restarts.</li>
+    </ul>
+  </section>
+
+  <section class="release" id="v2.0.4">
+    <h2 class="plain"><a href="#v2.0.4">2.0.4</a></h2>
+    <h3>Improvements</h3>
+    <ul>
+    <li><strong>WorkBuddy-Aligned Thinking Effort</strong>: Dynamically syncs <code>get_available_models.rawModels</code>, supporting <code>Thinking mode</code> toggle and <code>Low / Medium / High / Extra High / Max</code> intensities plus per-model credit multipliers (<code>0.29x</code>, <code>0.00x</code>).</li>
+    <li><strong>Live Account Remaining Credits</strong>: Integrates WorkBuddy's <code>get-user-resource-summary</code> and enterprise billing APIs to display remaining credits right on the composer toolbar pill, popover, and account settings.</li>
+    <li><strong>Per-Turn &amp; Session Credit Consumption</strong>: Displays consumed credits (<code>消耗 x.xx 积分</code>) in every turn footer and session context usage panel.</li>
+    </ul>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>Fixed duplicate user message bubbles caused by CodeBuddy CLI generating a new UUIDv7 when echoing <code>--replay-user-messages</code>.</li>
+    </ul>
+  </section>
+
+  <section class="release" id="v2.0.2">
+    <h2 class="plain"><a href="#v2.0.2">2.0.2</a></h2>
+    <h3>What's New in Cyte 2.0.2</h3>
+    <ul>
+    <li><strong>Native Tencent CodeBuddy (<code>codebuddy</code> / <code>cbc</code>) Engine</strong>: Persistent multi-turn <code>stream-json</code> sessions supporting CN (<code>copilot.tencent.com</code>), Global (<code>www.codebuddy.ai</code>), iOA, Enterprise, and custom <code>~/.codebuddy/models.json</code> models with <code>--effort</code> and <code>--autocompact</code>.</li>
+    <li><strong>Multi-Account OAuth &amp; Credit Center</strong>: Browser OAuth login for CN &amp; Global accounts, API Key accounts (<code>CODEBUDDY_API_KEY</code>), Token/JSON import &amp; export, live edition/billing checks, per-turn credit tracking, and automatic failover.</li>
+    <li><strong>Refined Workbench &amp; Multi-Platform Releases</strong>: Minimalist thin-stroke sidebar, warm unified composer card with icon-only mode picker and crisp context ring, custom theme editor, and Ed25519-signed installers for macOS, Windows, and Linux.</li>
+    </ul>
+    <blockquote>
+    <p><strong>macOS First Launch Note</strong>: On macOS without Apple notarization, run <code>xattr -cr /Applications/Cyte.app</code> once in Terminal after dragging <code>Cyte.app</code> into <code>Applications</code> if Gatekeeper blocks first launch.</p>
+    </blockquote>
+  </section>
+</main>
+
+<script src="/site.js"></script>
+</body>
+</html>

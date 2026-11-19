@@ -10,12 +10,12 @@ Grab the prebuilt installer for your platform from [GitHub Releases](https://git
 
 | Platform | Architecture | Direct Download |
 | --- | --- | --- |
-| **macOS** | Apple Silicon (M1 / M2 / M3 / M4) | [Cyte-2.0.4-arm64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-arm64.dmg) |
-| **macOS** | Intel (x86_64) | [Cyte-2.0.4-x64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-x64.dmg) |
-| **Windows** | x64 (Windows 10 / 11) | [Cyte-2.0.4-setup.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-setup.exe) |
-| **Windows** | ARM64 | [Cyte-2.0.4-setup-arm64.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-setup-arm64.exe) |
-| **Linux** | x64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.4-linux-amd64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-linux-amd64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-linux-amd64.tar.gz) |
-| **Linux** | ARM64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.4-linux-arm64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-linux-arm64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.4/Cyte-2.0.4-linux-arm64.tar.gz) |
+| **macOS** | Apple Silicon (M1 / M2 / M3 / M4) | [Cyte-2.0.5-arm64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-arm64.dmg) |
+| **macOS** | Intel (x86_64) | [Cyte-2.0.5-x64.dmg](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-x64.dmg) |
+| **Windows** | x64 (Windows 10 / 11) | [Cyte-2.0.5-setup.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-setup.exe) |
+| **Windows** | ARM64 | [Cyte-2.0.5-setup-arm64.exe](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-setup-arm64.exe) |
+| **Linux** | x64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.5-linux-amd64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-linux-amd64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-linux-amd64.tar.gz) |
+| **Linux** | ARM64 (Ubuntu / Debian `.deb`) | [Cyte-2.0.5-linux-arm64.deb](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-linux-arm64.deb) · [.tar.gz](https://github.com/pomelo-ccc/cyte/releases/download/v2.0.5/Cyte-2.0.5-linux-arm64.tar.gz) |
 
 > **macOS First Launch Note**: After dragging `Cyte` into `Applications`, if Gatekeeper blocks opening an ad-hoc signed build, run this once in Terminal:
 > ```bash
