@@ -48,9 +48,59 @@ void main() {
       expect(ReplySuggestions.of(middle), isEmpty);
       const code = '标签是 `<$_t>`';
       expect(ReplySuggestions.strip(code), code);
+      const unclosedCode = '标签是 `<$_t>';
+      expect(ReplySuggestions.strip(unclosedCode), unclosedCode);
       const other = 'a <b';
       expect(ReplySuggestions.strip(other), other);
       expect(ReplySuggestions.strip('no tags'), 'no tags');
+    });
+
+    test('tool-style <parameter name="reply_suggestion"> and malformed closing tags are stripped and parsed', () {
+      const mixed1 =
+          '4200 / 4201 / 4203 / 4205 均 200。\n\n'
+          '<reply_suggestion>把这处 lc 改动提交掉</reply_suggestion>\n'
+          '<parameter name="reply_suggestion">改成 umc ppm 侧适配，不动库</reply_suggestion>\n'
+          '<reply_suggestion>先打开 4200 验一下批量失败表</reply_suggestion>';
+      expect(ReplySuggestions.strip(mixed1), '4200 / 4201 / 4203 / 4205 均 200。');
+      expect(ReplySuggestions.of(mixed1), [
+        '把这处 lc 改动提交掉',
+        '改成 umc ppm 侧适配，不动库',
+        '先打开 4200 验一下批量失败表',
+      ]);
+
+      const mixed2 =
+          '4200 / 4201 / 4203 / 4205 全部 200。\n\n'
+          '<reply_suggestion>这两个未提交文件是试改，先回滚再看</reply_suggestion>\n'
+          '<parameter name="reply_suggestion">打开 4200 看看最新的 message 效果</reply_suggestion>\n'
+          '<parameter name="reply_suggestion">以后启动前先自动拉代码</parameter>';
+      expect(
+        ReplySuggestions.strip(mixed2),
+        '4200 / 4201 / 4203 / 4205 全部 200。',
+      );
+      expect(ReplySuggestions.of(mixed2), [
+        '这两个未提交文件是试改，先回滚再看',
+        '打开 4200 看看最新的 message 效果',
+        '以后启动前先自动拉代码',
+      ]);
+
+      const typoClose =
+          '全部 200。\n\n'
+          '<reply_suggestion>把那两个修复也提交到各自仓库</reply_suggestion>\n'
+          '<reply_suggestion>看看 `lc` 这次拉的 6 个提交都改了什么</repl席suggestion>';
+      expect(ReplySuggestions.strip(typoClose), '全部 200。');
+      expect(ReplySuggestions.of(typoClose), [
+        '把那两个修复也提交到各自仓库',
+        '看看 `lc` 这次拉的 6 个提交都改了什么',
+      ]);
+
+      for (final partial in [
+        '<param',
+        '<parameter name="reply_sugg',
+        '<parameter name="reply_suggestion">正在流式输出',
+        '<parameter name="reply_suggestion">正在流式输出</param',
+      ]) {
+        expect(ReplySuggestions.strip('好了\n${_said('a')}\n$partial'), '好了');
+      }
     });
 
     test('at most three, none too long', () {

@@ -15,9 +15,10 @@ abstract final class ReplySuggestions {
   /// on (or with the first message, on).
   static const on =
       '<system-reminder>Reply suggestions are on: the user turned them on '
-      'in BaoCode. When you finish your turn and hand back to them, end your '
+      'in Cyte. When you finish your turn and hand back to them, end your '
       'last message with two or three things they might send you next, each '
-      'in its own <$tag>…</$tag> on a line of its own, after all else: in '
+      'in its own <$tag>…</$tag> on a line of its own (plain <$tag>…</$tag> '
+      'tags only, never <parameter>), after all else: in '
       'their voice and their language, short (about 20 Chinese characters, '
       'or 10 words, at most), each a different way on (go ahead, change '
       'course, ask). They pick one to edit and send. The app shows them apart '
@@ -27,12 +28,12 @@ abstract final class ReplySuggestions {
   /// With each message after, a word.
   static const stillOn =
       '<system-reminder>Reply suggestions still on: end your turn with two '
-      'or three short <$tag>…</$tag>.</system-reminder>';
+      'or three short <$tag>…</$tag> lines (never <parameter>).</system-reminder>';
 
   /// Once, when they turn them off.
   static const off =
       '<system-reminder>Reply suggestions are off: the user turned them off '
-      'in BaoCode. Write no more <$tag>.</system-reminder>';
+      'in Cyte. Write no more <$tag>.</system-reminder>';
 
   /// What to tell the agent with a message, suggestions [wanted] or not:
   /// [told], what it was last told this run (none yet); [suggested],
@@ -74,15 +75,34 @@ abstract final class ReplySuggestions {
   static String write(String text, List<String> suggestions) =>
       [text, for (final said in suggestions) '<$tag>$said</$tag>'].join('\n');
 
-  static const _open = '<$tag>';
+  static const _openCandidates = [
+    '<$tag>',
+    '<parameter name="$tag">',
+    "<parameter name='$tag'>",
+    '<antml:parameter name="$tag">',
+    "<antml:parameter name='$tag'>",
+  ];
 
-  static final _whole = RegExp('<$tag>([^<`]*)</$tag>');
+  static bool _isOpenPrefix(String s) =>
+      s.isNotEmpty && _openCandidates.any((c) => c.startsWith(s));
+
+  /// Matches `<reply_suggestion>` as well as tool-style hallucinations such as
+  /// `<parameter name="reply_suggestion">` / `<antml:parameter name='reply_suggestion'>`.
+  static const _openExpr =
+      '<(?:(?:[a-z0-9_]+:)?parameter\\s+name=["\']$tag["\']|$tag)>';
+
+  static final _whole = RegExp('$_openExpr([^<\\n]*)</[^>\\n]+>');
+
+  static const _wholeExpr = '$_openExpr[^<\\n]*</[^>\\n]+>';
+  static const _trailWrapperExpr =
+      '(?:\\s*</(?:[a-z0-9_]+:)?(?:invoke|function_calls)>)*';
 
   /// Whole ones; then perhaps one under way, its end tag not yet whole;
-  /// or the start of its tag.
+  /// or the start of its opening tag.
   static final _tail = RegExp(
-    '(?:\\s*<$tag>[^<`]*</$tag>)*\\s*'
-    '(?:<$tag>[^<`]*(?:</?[a-z_]*)?|(<[a-z_]*))?\$',
+    '(?:\\s*$_wholeExpr)*\\s*'
+    '(?:$_openExpr[^<\\n]*(?:<(?:/[^>\\n]*)?)?|(<[^<\\n>]*))?'
+    '$_trailWrapperExpr\\s*\$',
   );
 
   /// Where the suggestions at the end of [text] start (the space before
@@ -91,14 +111,17 @@ abstract final class ReplySuggestions {
     final lt = text.lastIndexOf('<');
     if (lt < 0) return null;
     // Cheap first: no tag of them, nor the start of one at the end.
-    if (!text.contains(_open) && !_open.startsWith(text.substring(lt))) {
+    if (!text.contains(tag) && !_isOpenPrefix(text.substring(lt))) {
       return null;
     }
     final match = _tail.firstMatch(text);
     if (match == null || match.start == match.end) return null;
     // A tag's start at the end that is not theirs: none.
-    if (match[1] case final start? when !_open.startsWith(start)) return null;
+    if (match[1] case final start? when !_isOpenPrefix(start)) return null;
     final at = match.start;
+    // Inline code (`<reply_suggestion>...`) is spoken of, not a suggestion.
+    final firstLt = text.indexOf('<', at);
+    if (firstLt > 0 && text.codeUnitAt(firstLt - 1) == 0x60) return null;
     // Only space before: nothing said.
     if (text.substring(at).trim().isEmpty) return null;
     return at;

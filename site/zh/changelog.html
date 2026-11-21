@@ -30,6 +30,14 @@
   <h1>更新日志</h1>
   <p class="subtitle">BaoCode 每个版本的变化。</p>
 
+  <section class="release" id="v2.0.7">
+    <h2 class="plain"><a href="#v2.0.7">2.0.7</a></h2>
+    <h3>问题修复</h3>
+    <ul>
+    <li><strong>修复快捷回复建议标签裸露在消息正文的问题</strong>：兼容部分模型输出的工具参数风格标签（如 <code>&lt;parameter name=&quot;reply_suggestion&quot;&gt;…&lt;/reply_suggestion&gt;</code> / <code>&lt;/parameter&gt;</code>）、带行内反引号的建议文本及残缺闭合标签，统一从回复末尾干净剥离并正常提取到输入框上方的快捷回复栏，同时加固提示词约束避免模型误用 <code>&lt;parameter&gt;</code> 标签。</li>
+    </ul>
+  </section>
+
   <section class="release" id="v2.0.6">
     <h2 class="plain"><a href="#v2.0.6">2.0.6</a></h2>
     <h3>问题修复</h3>

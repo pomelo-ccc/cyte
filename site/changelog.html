@@ -30,6 +30,14 @@
   <h1>Changelog</h1>
   <p class="subtitle">What changed in each version of BaoCode.</p>
 
+  <section class="release" id="v2.0.7">
+    <h2 class="plain"><a href="#v2.0.7">2.0.7</a></h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li><strong>Fixed Raw <code>&lt;reply_suggestion&gt;</code> / <code>&lt;parameter name=&quot;reply_suggestion&quot;&gt;</code> Tags Leaking into Replies</strong>: Strips and parses tool-parameter-style suggestion tags (<code>&lt;parameter name=&quot;reply_suggestion&quot;&gt;…&lt;/reply_suggestion&gt;</code> / <code>&lt;/parameter&gt;</code>), inline backticks inside suggestions, and malformed closing tags into the composer suggestion bar while tightening system instructions against <code>&lt;parameter&gt;</code> tags.</li>
+    </ul>
+  </section>
+
   <section class="release" id="v2.0.6">
     <h2 class="plain"><a href="#v2.0.6">2.0.6</a></h2>
     <h3>Bug Fixes</h3>
